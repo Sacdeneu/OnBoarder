@@ -3,7 +3,7 @@ name: Build and Release Windows
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*' 
 
 jobs:
   build:
@@ -16,10 +16,10 @@ jobs:
     - name: Setup MSVC
       uses: microsoft/setup-msbuild@v1.1
 
-    - name: Install Qt 6.9.1
+    - name: Install Qt 6.8.0
       uses: jurplel/install-qt-action@v4
       with:
-        version: '6.9.1'
+        version: '6.8.0'
         host: 'windows'
         target: 'desktop'
         arch: 'win64_msvc'
