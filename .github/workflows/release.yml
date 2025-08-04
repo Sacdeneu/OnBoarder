@@ -3,23 +3,23 @@ name: Build and Release Windows
 on:
   push:
     tags:
-      - 'v*' 
+      - 'v*'
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout source code
       uses: actions/checkout@v3
 
-    - name: Setup MSVC
+    - name: Setup MSVC build tools
       uses: microsoft/setup-msbuild@v1.1
 
-    - name: Install Qt 6.8.0
+    - name: Install Qt 6.9.0
       uses: jurplel/install-qt-action@v4
       with:
-        version: '6.8.0'
+        version: '6.9.0'
         host: 'windows'
         target: 'desktop'
         arch: 'win64_msvc'
