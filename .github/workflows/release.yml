@@ -16,10 +16,13 @@ jobs:
     - name: Setup MSVC
       uses: microsoft/setup-msbuild@v1.1
 
-    - name: Setup Qt (install via Chocolatey)
-      run: |
-        choco install qt5
-        refreshenv
+    - name: Install Qt 6.9.1
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.9.1'
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc'
 
     - name: Configure project with qmake
       run: qmake OnBoarder.pro
