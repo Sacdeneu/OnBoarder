@@ -51,3 +51,8 @@ Thumbs.db
 
 # Dossiers spécifiques Windows
 desktop.ini
+
+build/
+*.pro.user
+*.log
+*.tmp
