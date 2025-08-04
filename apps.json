@@ -1,0 +1,124 @@
+{
+  "apps": [
+    {
+      "name": "Google Chrome",
+      "icon": "chrome.svg",
+      "commands": {
+        "windows": "winget install Google.Chrome -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask google-chrome",
+        "linux": "flatpak install flathub com.google.Chrome -y"
+      }
+    },
+    {
+      "name": "Visual Studio Code",
+      "icon": "vscode.svg",
+      "commands": {
+        "windows": "winget install Microsoft.VisualStudioCode -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask visual-studio-code",
+        "linux": "flatpak install flathub com.visualstudio.code -y"
+      }
+    },
+    {
+      "name": "Visual Studio 2022",
+      "icon": "visualstudio.svg",
+      "commands": {
+        "windows": "winget install Microsoft.VisualStudio.2022.Community -e --accept-source-agreements --accept-package-agreements"
+      }
+    },
+    {
+      "name": "Postman",
+      "icon": "postman.svg",
+      "commands": {
+        "windows": "winget install Postman.Postman -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask postman",
+        "linux": "flatpak install flathub com.getpostman.Postman -y"
+      }
+    },
+    {
+      "name": "Android Studio",
+      "icon": "androidstudio.svg",
+      "commands": {
+        "windows": "winget install Google.AndroidStudio -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask android-studio",
+        "linux": "flatpak install flathub com.google.AndroidStudio -y"
+      }
+    },
+    {
+      "name": "GIMP",
+      "icon": "gimp.svg",
+      "commands": {
+        "windows": "winget install GIMP.GIMP -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask gimp",
+        "linux": "flatpak install flathub org.gimp.GIMP -y"
+      }
+    },
+    {
+      "name": "Blender",
+      "icon": "blender.svg",
+      "commands": {
+        "windows": "winget install BlenderFoundation.Blender -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask blender",
+        "linux": "flatpak install flathub org.blender.Blender -y"
+      }
+    },
+    {
+      "name": "PostgreSQL",
+      "icon": "postgresql.svg",
+      "commands": {
+        "windows": "winget install PostgreSQL.PostgreSQL -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install postgresql",
+        "linux": "sudo apt-get install postgresql postgresql-contrib -y"
+      }
+    },
+    {
+      "name": "Unity Hub",
+      "icon": "unity.svg",
+      "commands": {
+        "windows": "winget install Unity.UnityHub -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask unity-hub",
+        "linux": "flatpak install flathub com.unity.UnityHub -y"
+      }
+    },
+    {
+      "name": "DBeaver",
+      "icon": "dbeaver.svg",
+      "commands": {
+        "windows": "winget install dbeaver.dbeaver -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask dbeaver-community",
+        "linux": "flatpak install flathub io.dbeaver.DBeaverCommunity -y"
+      }
+    },
+    {
+      "name": "ShareX",
+      "icon": "sharex.svg",
+      "commands": {
+        "windows": "winget install ShareX.ShareX -e --accept-source-agreements --accept-package-agreements"
+      }
+    },
+    {
+      "name": "Slack",
+      "icon": "slack.svg",
+      "commands": {
+        "windows": "winget install SlackTechnologies.Slack -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask slack",
+        "linux": "flatpak install flathub com.slack.Slack -y"
+      }
+    },
+    {
+      "name": "Wrike",
+      "icon": "wrike.svg",
+      "commands": {
+        "windows": "powershell -Command \"$msiPath = [System.IO.Path]::Combine($env:TEMP, 'WrikeDesktopApp.msi'); Remove-Item -Force -ErrorAction SilentlyContinue $msiPath; Invoke-WebRequest -Uri 'https://dl.wrike.com/download/WrikeDesktopApp_64.v4.5.2.msi' -OutFile $msiPath; $logPath = [System.IO.Path]::Combine($env:TEMP, 'WrikeInstall.log'); Remove-Item -Force -ErrorAction SilentlyContinue $logPath; & msiexec.exe /i $msiPath /qn /norestart /L*v $logPath\""
+      }
+    },
+    {
+      "name": "Figma",
+      "icon": "figma.svg",
+      "commands": {
+        "windows": "winget install Figma.Figma -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask figma",
+        "linux": "flatpak install flathub io.github.Figma_Linux.figma_linux -y"
+      }
+    }
+  ]
+}

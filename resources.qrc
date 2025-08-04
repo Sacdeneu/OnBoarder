@@ -1,0 +1,25 @@
+<RCC>
+    <qresource prefix="/data">
+        <file>apps.json</file>
+    </qresource>
+    <qresource prefix="/icons">
+        <file>androidstudio.svg</file>
+        <file>blender.svg</file>
+        <file>chrome.svg</file>
+        <file>gimp.svg</file>
+        <file>postman.svg</file>
+        <file>visualstudio.svg</file>
+        <file>vscode.svg</file>
+        <file>dbeaver.svg</file>
+        <file>figma.svg</file>
+        <file>postgresql.svg</file>
+        <file>sharex.svg</file>
+        <file>slack.svg</file>
+        <file>unity.svg</file>
+        <file>wrike.svg</file>
+    </qresource>
+    <qresource prefix="/translations">
+        <file>app_manager_en.ts</file>
+        <file>appmanager_en_ui.ts</file>
+    </qresource>
+</RCC>

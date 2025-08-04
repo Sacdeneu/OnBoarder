@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Gestionnaire d'applications</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="mainLayout">
+    <item>
+     <widget class="QWidget" name="stepIndicatorWidget">
+      <layout class="QHBoxLayout" name="stepIndicatorLayout">
+       <item>
+        <widget class="QLabel" name="labelStep1">
+         <property name="text">
+          <string>Étape 1 : Sélection</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelStep2">
+         <property name="text">
+          <string>Étape 2 : Installation</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelStep3">
+         <property name="text">
+          <string>Étape 3 : Résumé</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QStackedWidget" name="stackedWidget">
+      <widget class="QWidget" name="pageSelect">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QListWidget" name="listWidget"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="installButton">
+          <property name="text">
+           <string>Installer</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="uninstallButton">
+          <property name="text">
+           <string>Désinstaller</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="pageInstall">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QProgressBar" name="progressBar"/>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="showLogsCheckBox">
+          <property name="text">
+           <string>Voir les logs</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTextEdit" name="logTextEdit">
+          <property name="visible">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="pageSummary">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QTextEdit" name="summaryTextEdit"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="restartButton">
+          <property name="text">
+           <string>Retour à l'étape 1</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="quitButton">
+          <property name="text">
+           <string>Quitter</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
