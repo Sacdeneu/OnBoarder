@@ -1,0 +1,47 @@
+name: Build and Release Windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v1.1
+
+    - name: Setup Qt (install via Chocolatey)
+      run: |
+        choco install qt5
+        refreshenv
+
+    - name: Configure project with qmake
+      run: qmake OnBoarder.pro
+
+    - name: Build project
+      run: msbuild OnBoarder.sln /p:Configuration=Release
+
+    - name: Package binaries
+      run: |
+        mkdir release
+        copy release\OnBoarder.exe release\
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: Automated build of ${{ github.ref_name }}
+
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        files: release\OnBoarder.exe
