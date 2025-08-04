@@ -1,0 +1,53 @@
+# Fichiers objets compilés
+*.o
+*.obj
+*.so
+*.exe
+*.dll
+*.lib
+*.a
+*.lo
+
+# Fichiers générés par Qt (MOC, UI, QRC)
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+
+# Fichiers de construction et dossiers
+Makefile*
+build-*/
+debug/
+release/
+dist/
+bin/
+
+# Fichiers temporaires
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Fichiers spécifiques Qt Creator à ignorer
+*.pro.user
+*.pro.user.*
+*.qbs.user
+*.qbs.user.*
+*.qm
+*.prl
+*.autosave
+*.qmlproject.user
+*.qmlproject.user.*
+
+# Fichiers Visual Studio et autres IDE
+*.user
+*.VC.db
+*.VC.opendb
+*.DS_Store
+Thumbs.db
+
+# Dossiers spécifiques macOS
+.DS_Store
+
+# Dossiers spécifiques Windows
+desktop.ini
