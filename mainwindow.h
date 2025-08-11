@@ -42,6 +42,7 @@ private slots:
     void onItemChanged(QListWidgetItem *item);
 
 private:
+    void updateStepIndicator(int currentStep);
     bool isCustomAppInstalled(const QString& appName, const QString& executablePath);
     void loadApps();
     void startNextInstall();

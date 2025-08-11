@@ -50,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(tr("Gestionnaire d'applications"));
 
     loadApps();
+    updateStepIndicator(1);
 }
 
 MainWindow::~MainWindow() {
@@ -204,6 +205,49 @@ QString MainWindow::extractWingetId(const QString &installCommand) {
     return "";
 }
 
+void MainWindow::updateStepIndicator(int currentStep) {
+    // Style pour l'étape active (bleue)
+    QString activeStyle = "QLabel {"
+                          "background-color: #0d6efd;"
+                          "color: white;"
+                          "border-radius: 20px;"
+                          "font-weight: bold;"
+                          "font-size: 14px;"
+                          "}";
+
+    // Style pour les étapes inactives (grises)
+    QString inactiveStyle = "QLabel {"
+                            "background-color: #6c757d;"
+                            "color: white;"
+                            "border-radius: 20px;"
+                            "font-weight: bold;"
+                            "font-size: 14px;"
+                            "}";
+
+    // Style pour les étapes terminées (verte)
+    QString completedStyle = "QLabel {"
+                             "background-color: #198754;"
+                             "color: white;"
+                             "border-radius: 20px;"
+                             "font-weight: bold;"
+                             "font-size: 14px;"
+                             "}";
+
+    // Réinitialiser tous les cercles
+    ui->labelStepCircle1->setStyleSheet(currentStep > 1 ? completedStyle : (currentStep == 1 ? activeStyle : inactiveStyle));
+    ui->labelStepCircle2->setStyleSheet(currentStep > 2 ? completedStyle : (currentStep == 2 ? activeStyle : inactiveStyle));
+    ui->labelStepCircle3->setStyleSheet(currentStep == 3 ? activeStyle : inactiveStyle);
+
+    // Mettre à jour les couleurs des textes
+    QString activeTextStyle = "font-size: 12px; color: #0d6efd; font-weight: bold;";
+    QString inactiveTextStyle = "font-size: 12px; color: #6c757d;";
+    QString completedTextStyle = "font-size: 12px; color: #198754; font-weight: bold;";
+
+    ui->labelStep1->setStyleSheet(currentStep > 1 ? completedTextStyle : (currentStep == 1 ? activeTextStyle : inactiveTextStyle));
+    ui->labelStep2->setStyleSheet(currentStep > 2 ? completedTextStyle : (currentStep == 2 ? activeTextStyle : inactiveTextStyle));
+    ui->labelStep3->setStyleSheet(currentStep == 3 ? activeTextStyle : inactiveTextStyle);
+}
+
 bool MainWindow::isAppInstalledWinget(const QString &wingetId) {
 #ifdef Q_OS_WIN
     if (wingetId.isEmpty()) return false;
@@ -279,7 +323,7 @@ void MainWindow::onInstallClicked() {
     ui->progressBar->setValue(0);
     ui->logTextEdit->clear();
     ui->stackedWidget->setCurrentIndex(1); // go to install page
-
+    updateStepIndicator(2);
     startNextInstall();
 }
 void MainWindow::startNextInstall() {
@@ -296,6 +340,7 @@ void MainWindow::startNextInstall() {
         ui->progressBar->setValue(100);
         updateSummary();
         ui->stackedWidget->setCurrentIndex(2); // page résumé
+        updateStepIndicator(3);
         return;
     }
 
@@ -439,9 +484,11 @@ void MainWindow::onUninstallClicked() {
     ui->progressBar->setValue(0);
     ui->logTextEdit->clear();
     ui->stackedWidget->setCurrentIndex(1); // go to install page (reuse)
-
+    updateStepIndicator(2);
     startNextUninstall();
-}void MainWindow::startNextUninstall() {
+}
+
+void MainWindow::startNextUninstall() {
     while (currentAppIndex < apps.size()) {
         AppStatus &app = apps[currentAppIndex];
         if (app.item->checkState() == Qt::Checked && app.state == AppState::Installing) {
@@ -455,6 +502,7 @@ void MainWindow::onUninstallClicked() {
         ui->progressBar->setValue(100);
         updateSummary();
         ui->stackedWidget->setCurrentIndex(2);
+        updateStepIndicator(3);
         return;
     }
 
@@ -591,6 +639,7 @@ void MainWindow::onShowLogsToggled(bool checked) {
 
 void MainWindow::onRestartClicked() {
     ui->stackedWidget->setCurrentIndex(0);
+    updateStepIndicator(1);
     ui->progressBar->setValue(0);
     ui->logTextEdit->clear();
     ui->summaryTextEdit->clear();
