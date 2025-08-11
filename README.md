@@ -1,7 +1,7 @@
 
 # OnBoarder — Project Guide / Guide du Projet
 <p align="center">
-  <img src="icon.png" alt="OnBoarder Icon" width="128" height="128">
+  <img src="icon.png" alt="OnBoarder Icon">
 </p>
 
 ---
