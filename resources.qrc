@@ -17,6 +17,7 @@
         <file>slack.svg</file>
         <file>unity.svg</file>
         <file>wrike.svg</file>
+        <file>favicon.svg</file>
     </qresource>
     <qresource prefix="/translations">
         <file>app_manager_en.ts</file>

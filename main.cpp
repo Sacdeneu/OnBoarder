@@ -7,6 +7,8 @@
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
+    app.setWindowIcon(QIcon(":/icons/favicon.svg"));
+
     // Détection de la langue du système
     QString locale = QLocale::system().name(); // ex: "fr_FR", "en_US", etc.
 
