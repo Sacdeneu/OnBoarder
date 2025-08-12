@@ -8,43 +8,80 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
+    permissions:
+      contents: write
+    
     steps:
     - name: Checkout source code
-      uses: actions/checkout@v3
-
-    - name: Setup MSVC build tools
-      uses: microsoft/setup-msbuild@v1.1
-
-    - name: Install Qt 6.9.0
+      uses: actions/checkout@v4
+      
+    - name: Setup MSVC environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+        
+    - name: Install Qt 6.8.1
       uses: jurplel/install-qt-action@v4
       with:
-        version: '6.9.0'
+        version: '6.8.1'
         host: 'windows'
         target: 'desktop'
-        arch: 'win64_msvc'
-
+        arch: 'win64_msvc2022_64'
+        tools: 'tools_cmake tools_ninja'
+      
     - name: Configure project with qmake
-      run: qmake OnBoarder.pro
-
-    - name: Build project
-      run: msbuild OnBoarder.sln /p:Configuration=Release
-
-    - name: Package binaries
       run: |
-        mkdir release
-        copy release\OnBoarder.exe release\
-
+        qmake OnBoarder.pro CONFIG+=release
+        
+    - name: Build project
+      run: |
+        nmake
+        
+    - name: Deploy Qt dependencies
+      run: |
+        mkdir deploy
+        copy release\OnBoarder.exe deploy\
+        windeployqt deploy\OnBoarder.exe --release --no-translations --no-system-d3d-compiler --no-opengl-sw
+        
+    - name: Create ZIP package
+      run: |
+        powershell Compress-Archive -Path "deploy\*" -DestinationPath "OnBoarder-${{ github.ref_name }}-windows-x64.zip"
+        
+    - name: Verify package exists
+      run: |
+        dir OnBoarder-${{ github.ref_name }}-windows-x64.zip
+        
     - name: Create GitHub Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref_name }}
-        name: Release ${{ github.ref_name }}
-        body: Automated build of ${{ github.ref_name }}
-
-    - name: Upload Release Asset
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ github.ref_name }}
-        files: release\OnBoarder.exe
+        name: OnBoarder ${{ github.ref_name }}
+        body: |
+          🚀 **OnBoarder ${{ github.ref_name }}** - Application Manager for Windows
+          
+          ## 📦 Download
+          Download `OnBoarder-${{ github.ref_name }}-windows-x64.zip` below
+          
+          ## 🚀 How to use
+          1. Download the `.zip` file below
+          2. Extract all files to a folder
+          3. Run `OnBoarder.exe` from the extracted folder
+          4. Windows might show a security warning (click "More info" → "Run anyway")
+          
+          ## 💻 System Requirements
+          - Windows 10/11 (64-bit)
+          - All Qt dependencies included in the ZIP
+          
+          ## 🛠️ Built with
+          - Qt 6.8.1
+          - MSVC 2022
+          
+          ---
+          *Portable application - extract and run*
+        files: |
+          OnBoarder-${{ github.ref_name }}-windows-x64.zip
+        draft: false
+        prerelease: false
+        generate_release_notes: false
