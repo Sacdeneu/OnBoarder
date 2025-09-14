@@ -101,6 +101,24 @@
         <item><widget class="QPushButton" name="installButton"><property name="text"><string>Installer</string></property></widget></item>
         <item><widget class="QPushButton" name="uninstallButton"><property name="text"><string>Désinstaller</string></property></widget></item>
         <item><widget class="QPushButton" name="settingsButton"><property name="text"><string>Paramètres</string></property></widget></item>
+	<item>
+<widget class="QPushButton" name="updateButton">
+  <property name="text">
+   <string>Mise à jour disponible</string>
+  </property>
+  <property name="visible">
+   <bool>false</bool>
+  </property>
+  <property name="styleSheet">
+   <string>QPushButton { 
+     background-color: #28a745; 
+     color: white; 
+     font-weight: bold; 
+     border-radius: 5px; 
+   }</string>
+  </property>
+ </widget>
+</item>
        </layout>
       </widget>
 

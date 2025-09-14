@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "qlabel.h"
 #include <QMainWindow>
 #include <QJsonArray>
 #include <QProcess>
@@ -40,7 +41,7 @@ private slots:
     void onDarkThemeToggled(bool checked);
     void onAutoUpdateToggled(bool checked);
     void onCheckUpdateClicked();
-
+    void onUpdateButtonClicked();
     void checkForUpdates(bool manual = false);
     void handleUpdateReply(QNetworkReply *reply);
     void downloadAndInstallUpdate(const QString &url);
@@ -55,6 +56,7 @@ private slots:
     void onItemChanged(QListWidgetItem *item);
 
 private:
+    QLabel *updateIcon;
     void applyDarkTheme(bool enabled);
     void loadSettings();
     void saveSettings();

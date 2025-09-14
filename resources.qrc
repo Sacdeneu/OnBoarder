@@ -18,9 +18,15 @@
         <file>unity.svg</file>
         <file>wrike.svg</file>
         <file>favicon.svg</file>
+        <file>steam.svg</file>
+        <file>firefox.svg</file>
+        <file>discord.svg</file>
+        <file>teams.svg</file>
+        <file>epicgameslauncher.svg</file>
     </qresource>
     <qresource prefix="/translations">
         <file>app_manager_en.ts</file>
         <file>appmanager_en_ui.ts</file>
     </qresource>
+    <qresource prefix="/"/>
 </RCC>

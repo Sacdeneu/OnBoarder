@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QProgressDialog>
 #include <QFile>
+#include <QTimer>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -38,12 +39,14 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    loadSettings();
     // Connect buttons
     connect(ui->installButton, &QPushButton::clicked, this, &MainWindow::onInstallClicked);
     connect(ui->uninstallButton, &QPushButton::clicked, this, &MainWindow::onUninstallClicked);
     connect(ui->showLogsCheckBox, &QCheckBox::toggled, this, &MainWindow::onShowLogsToggled);
     connect(ui->restartButton, &QPushButton::clicked, this, &MainWindow::onRestartClicked);
     connect(ui->quitButton, &QPushButton::clicked, this, &MainWindow::onQuitClicked);
+    connect(ui->updateButton, &QPushButton::clicked, this, &MainWindow::onUpdateButtonClicked);
 
     // Connect list widget selection changes
     connect(ui->listWidget, &QListWidget::itemChanged, this, &MainWindow::onItemChanged);
@@ -53,10 +56,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->autoUpdateCheckBox, &QCheckBox::toggled, this, &MainWindow::onAutoUpdateToggled);
     connect(ui->checkUpdateButton, &QPushButton::clicked, this, &MainWindow::onCheckUpdateClicked);
 
-    loadSettings();
-
     if (autoUpdateEnabled) {
-        checkForUpdates(false);
+        QTimer::singleShot(0, this, [this]() { checkForUpdates(false); });
     }
 
     ui->progressBar->setValue(0);
@@ -72,6 +73,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     loadApps();
     updateStepIndicator(1);
+}
+
+void MainWindow::onUpdateButtonClicked() {
+    ui->stackedWidget->setCurrentIndex(3); // pageSettings
+    // Optionnellement, déclencher automatiquement la vérification
+    onCheckUpdateClicked();
 }
 
 MainWindow::~MainWindow() {
@@ -205,6 +212,8 @@ void MainWindow::handleUpdateReply(QNetworkReply *reply) {
         // Chercher le fichier Setup.exe dans les assets
         QString setupDownloadUrl;
         QJsonArray assets = obj.value("assets").toArray();
+        ui->updateButton->setVisible(true);
+        ui->updateButton->setText(QString("Mise à jour %1 disponible").arg(latestVersion));
 
         for (const QJsonValue &asset : assets) {
             QJsonObject assetObj = asset.toObject();
@@ -237,6 +246,7 @@ void MainWindow::handleUpdateReply(QNetworkReply *reply) {
             downloadAndInstallUpdate(setupDownloadUrl);
         }
     } else {
+        ui->updateButton->setVisible(false);
         QMessageBox::information(this, tr("Mises à jour"),
                                  tr("Votre application est déjà à jour (%1).").arg(currentVersion));
     }

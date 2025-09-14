@@ -119,6 +119,50 @@
         "macos": "brew install --cask figma",
         "linux": "flatpak install flathub io.github.Figma_Linux.figma_linux -y"
       }
-    }
+    },
+    {
+          "name": "Epic Games Launcher",
+          "icon": "epicgameslauncher.svg",
+          "commands": {
+            "windows": "winget install EpicGames.EpicGamesLauncher -e --accept-source-agreements --accept-package-agreements",
+            "macos": "brew install --cask epic-games"
+          }
+        },
+        {
+          "name": "Microsoft Teams",
+          "icon": "teams.svg",
+          "commands": {
+            "windows": "winget install Microsoft.Teams -e --accept-source-agreements --accept-package-agreements",
+            "macos": "brew install --cask microsoft-teams",
+            "linux": "flatpak install flathub com.microsoft.Teams -y"
+          }
+        },
+        {
+          "name": "Steam",
+          "icon": "steam.svg",
+          "commands": {
+            "windows": "winget install Valve.Steam -e --accept-source-agreements --accept-package-agreements",
+            "macos": "brew install --cask steam",
+            "linux": "flatpak install flathub com.valvesoftware.Steam -y"
+          }
+        },
+        {
+          "name": "Discord",
+          "icon": "discord.svg",
+          "commands": {
+            "windows": "winget install Discord.Discord -e --accept-source-agreements --accept-package-agreements",
+            "macos": "brew install --cask discord",
+            "linux": "flatpak install flathub com.discordapp.Discord -y"
+          }
+        },
+        {
+          "name": "Firefox",
+          "icon": "firefox.svg",
+          "commands": {
+            "windows": "winget install Mozilla.Firefox -e --accept-source-agreements --accept-package-agreements",
+            "macos": "brew install --cask firefox",
+            "linux": "flatpak install flathub org.mozilla.firefox -y"
+          }
+        }
   ]
 }

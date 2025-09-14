@@ -9,8 +9,7 @@ int main(int argc, char *argv[]) {
 
     app.setApplicationName("OnBoarder");
     app.setOrganizationName("Sacdeneu");
-    app.setApplicationVersion("1.0.0"); // <-- VERSION COURANTE
-
+    app.setApplicationVersion("1.0.0");
     app.setWindowIcon(QIcon(":/icons/favicon.svg"));
 
     QString locale = QLocale::system().name();
