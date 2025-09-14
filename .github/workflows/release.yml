@@ -1,5 +1,4 @@
 name: Build and Release Windows
-
 on:
   push:
     tags:
@@ -15,6 +14,11 @@ jobs:
     - name: Checkout source code
       uses: actions/checkout@v4
       
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
     - name: Setup MSVC environment
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -30,13 +34,11 @@ jobs:
         tools: 'tools_cmake tools_ninja'
       
     - name: Configure project with qmake
-      run: |
-        qmake OnBoarder.pro CONFIG+=release
-        
+      run: qmake OnBoarder.pro CONFIG+=release
+      
     - name: Build project
-      run: |
-        nmake
-        
+      run: nmake
+      
     - name: Deploy Qt dependencies
       run: |
         mkdir deploy
@@ -44,13 +46,30 @@ jobs:
         windeployqt deploy\OnBoarder.exe --release --no-translations --no-system-d3d-compiler --no-opengl-sw
         
     - name: Create ZIP package
-      run: |
-        powershell Compress-Archive -Path "deploy\*" -DestinationPath "OnBoarder-${{ github.ref_name }}-windows-x64.zip"
-        
+      run: powershell Compress-Archive -Path "deploy\*" -DestinationPath "OnBoarder.zip"
+      
     - name: Verify package exists
+      run: dir OnBoarder.zip
+      
+    - name: Install Velopack CLI
       run: |
-        dir OnBoarder-${{ github.ref_name }}-windows-x64.zip
+        $env:MSBuildSDKsPath=""
+        dotnet tool install vpk --version 0.0.1298 --global
+      shell: powershell
+    
+    - name: Create Velopack release
+      run: |
+        $version = "${{ github.ref_name }}" -replace '^v', ''
+        Write-Output "Using version: $version"
         
+        vpk pack `
+          --packDir deploy `
+          --packId OnBoarder `
+          --packVersion $version `
+          --mainExe OnBoarder.exe `
+          --outputDir Releases
+      shell: powershell
+    
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       env:
@@ -62,26 +81,14 @@ jobs:
           🚀 **OnBoarder ${{ github.ref_name }}** - Application Manager for Windows
           
           ## 📦 Download
-          Download `OnBoarder-${{ github.ref_name }}-windows-x64.zip` below
-          
-          ## 🚀 How to use
-          1. Download the `.zip` file below
-          2. Extract all files to a folder
-          3. Run `OnBoarder.exe` from the extracted folder
-          4. Windows might show a security warning (click "More info" → "Run anyway")
+          Download `OnBoarder.zip` below
           
           ## 💻 System Requirements
           - Windows 10/11 (64-bit)
           - All Qt dependencies included in the ZIP
-          
-          ## 🛠️ Built with
-          - Qt 6.8.1
-          - MSVC 2022
-          
-          ---
-          *Portable application - extract and run*
         files: |
-          OnBoarder-${{ github.ref_name }}-windows-x64.zip
+          OnBoarder.zip
+          Releases/*
         draft: false
         prerelease: false
         generate_release_notes: false
