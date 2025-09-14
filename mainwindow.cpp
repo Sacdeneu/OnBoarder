@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QProgressDialog>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -10,6 +11,11 @@
 #include <QLocale>
 #include <QTranslator>
 #include <QApplication>
+#include <QMessageBox>
+#include <QDir>
+#include <QFile>
+#include <QDesktopServices>
+#include <QUrl>
 
 #ifdef Q_OS_WIN
 #define OS_KEY "windows"
@@ -24,7 +30,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui(new Ui::MainWindow),
     process(nullptr),
     currentAppIndex(0),
-    uninstalling(false)
+    uninstalling(false),
+    settings("Sacdeneu", "OnBoarder"),
+    networkManager(new QNetworkAccessManager(this)),
+    autoUpdateEnabled(false),
+    updateDownloadReply(nullptr)
 {
     ui->setupUi(this);
 
@@ -37,6 +47,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Connect list widget selection changes
     connect(ui->listWidget, &QListWidget::itemChanged, this, &MainWindow::onItemChanged);
+
+    connect(ui->settingsButton, &QPushButton::clicked, this, &MainWindow::onSettingsClicked);
+    connect(ui->darkThemeCheckBox, &QCheckBox::toggled, this, &MainWindow::onDarkThemeToggled);
+    connect(ui->autoUpdateCheckBox, &QCheckBox::toggled, this, &MainWindow::onAutoUpdateToggled);
+    connect(ui->checkUpdateButton, &QPushButton::clicked, this, &MainWindow::onCheckUpdateClicked);
+
+    loadSettings();
+
+    if (autoUpdateEnabled) {
+        checkForUpdates(false);
+    }
 
     ui->progressBar->setValue(0);
     ui->logTextEdit->setVisible(false);
@@ -112,7 +133,230 @@ MainWindow::~MainWindow() {
     return false;
 }
 
+void MainWindow::applyDarkTheme(bool enabled) {
+    if (enabled) {
+        qApp->setStyleSheet("QWidget { background-color: #121212; color: #e0e0e0; }");
+    } else {
+        qApp->setStyleSheet("");
+    }
+}
 
+void MainWindow::loadSettings() {
+    bool darkTheme = settings.value("darkTheme", false).toBool();
+    autoUpdateEnabled = settings.value("autoUpdate", false).toBool();
+
+    ui->darkThemeCheckBox->setChecked(darkTheme);
+    ui->autoUpdateCheckBox->setChecked(autoUpdateEnabled);
+
+    applyDarkTheme(darkTheme);
+}
+
+void MainWindow::saveSettings() {
+    settings.setValue("darkTheme", ui->darkThemeCheckBox->isChecked());
+    settings.setValue("autoUpdate", ui->autoUpdateCheckBox->isChecked());
+}
+void MainWindow::onSettingsClicked() {
+    ui->stackedWidget->setCurrentIndex(3); // pageSettings
+}
+
+void MainWindow::onDarkThemeToggled(bool checked) {
+    applyDarkTheme(checked);
+    saveSettings();
+}
+
+void MainWindow::onAutoUpdateToggled(bool checked) {
+    autoUpdateEnabled = checked;
+    saveSettings();
+}
+
+void MainWindow::onCheckUpdateClicked() {
+    checkForUpdates(true);
+}
+
+void MainWindow::checkForUpdates(bool manual) {
+    QUrl url("https://api.github.com/repos/Sacdeneu/OnBoarder/releases/latest");
+    QNetworkReply *reply = networkManager->get(QNetworkRequest(url));
+    connect(reply, &QNetworkReply::finished, this, [this, reply, manual]() {
+        handleUpdateReply(reply);
+        reply->deleteLater();
+    });
+}
+
+void MainWindow::handleUpdateReply(QNetworkReply *reply) {
+    if (reply->error() != QNetworkReply::NoError) {
+        if (reply->error() == QNetworkReply::ContentNotFoundError)
+            appendLog("⚠️ Pas de release trouvée.");
+        else
+            appendLog("⚠️ Erreur réseau : " + reply->errorString());
+        return;
+    }
+
+    QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+    if (!doc.isObject()) {
+        appendLog("⚠️ Réponse GitHub invalide.");
+        return;
+    }
+
+    QJsonObject obj = doc.object();
+    QString latestVersion = obj.value("tag_name").toString(); // ex: "v1.2.0"
+    QString currentVersion = "v" + QCoreApplication::applicationVersion(); // Ajouter le 'v'
+
+    if (latestVersion != currentVersion) {
+        // Chercher le fichier Setup.exe dans les assets
+        QString setupDownloadUrl;
+        QJsonArray assets = obj.value("assets").toArray();
+
+        for (const QJsonValue &asset : assets) {
+            QJsonObject assetObj = asset.toObject();
+            QString name = assetObj.value("name").toString();
+
+            // Chercher le fichier Setup.exe
+            if (name.contains("Setup.exe", Qt::CaseInsensitive) ||
+                name.contains("-win-Setup.exe", Qt::CaseInsensitive)) {
+                setupDownloadUrl = assetObj.value("browser_download_url").toString();
+                break;
+            }
+        }
+
+        if (setupDownloadUrl.isEmpty()) {
+            QMessageBox::warning(this, tr("Erreur"),
+                                 tr("Aucun installateur trouvé dans la release %1.").arg(latestVersion));
+            return;
+        }
+
+        pendingUpdateVersion = latestVersion;
+
+        int result = QMessageBox::question(this, tr("Mise à jour disponible"),
+                                           tr("Nouvelle version %1 disponible (actuelle %2).\n\n"
+                                              "Voulez-vous télécharger et installer la mise à jour maintenant ?\n\n"
+                                              "L'application se fermera automatiquement après l'installation.")
+                                               .arg(latestVersion, currentVersion),
+                                           QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+
+        if (result == QMessageBox::Yes) {
+            downloadAndInstallUpdate(setupDownloadUrl);
+        }
+    } else {
+        QMessageBox::information(this, tr("Mises à jour"),
+                                 tr("Votre application est déjà à jour (%1).").arg(currentVersion));
+    }
+}
+
+void MainWindow::downloadAndInstallUpdate(const QString &url) {
+    // Créer une barre de progression pour le téléchargement
+    QProgressDialog *progressDialog = new QProgressDialog(
+        tr("Téléchargement de la mise à jour..."),
+        tr("Annuler"), 0, 100, this);
+    progressDialog->setWindowModality(Qt::WindowModal);
+    progressDialog->setMinimumDuration(0);
+    progressDialog->show();
+
+    updateDownloadReply = networkManager->get(QNetworkRequest(QUrl(url)));
+
+    connect(updateDownloadReply, &QNetworkReply::downloadProgress,
+            this, [this, progressDialog](qint64 bytesReceived, qint64 bytesTotal) {
+                if (bytesTotal > 0) {
+                    int percentage = (bytesReceived * 100) / bytesTotal;
+                    progressDialog->setValue(percentage);
+
+                    // Affichage en MB
+                    double receivedMB = bytesReceived / (1024.0 * 1024.0);
+                    double totalMB = bytesTotal / (1024.0 * 1024.0);
+
+                    progressDialog->setLabelText(
+                        tr("Téléchargement de la mise à jour...\n%1 MB / %2 MB")
+                            .arg(receivedMB, 0, 'f', 1)
+                            .arg(totalMB, 0, 'f', 1));
+                }
+            });
+
+    connect(progressDialog, &QProgressDialog::canceled, this, [this]() {
+        if (updateDownloadReply) {
+            updateDownloadReply->abort();
+        }
+    });
+
+    connect(updateDownloadReply, &QNetworkReply::finished, this, [this, progressDialog]() {
+        progressDialog->hide();
+        progressDialog->deleteLater();
+        onUpdateDownloadFinished();
+    });
+}
+
+
+void MainWindow::onUpdateDownloadFinished() {
+    if (!updateDownloadReply) return;
+
+    if (updateDownloadReply->error() != QNetworkReply::NoError) {
+        QMessageBox::warning(this, tr("Erreur"),
+                             tr("Échec du téléchargement de la mise à jour :\n%1")
+                                 .arg(updateDownloadReply->errorString()));
+        updateDownloadReply->deleteLater();
+        updateDownloadReply = nullptr;
+        return;
+    }
+
+    // Sauvegarder le fichier dans un dossier temporaire
+    QString tempDir = QDir::tempPath();
+    QString setupFileName = QString("OnBoarder-%1-Setup.exe").arg(pendingUpdateVersion);
+    QString setupFilePath = tempDir + "/" + setupFileName;
+
+    // Supprimer le fichier s'il existe déjà
+    QFile::remove(setupFilePath);
+
+    QFile file(setupFilePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        QMessageBox::warning(this, tr("Erreur"),
+                             tr("Impossible de créer le fichier temporaire :\n%1").arg(setupFilePath));
+        updateDownloadReply->deleteLater();
+        updateDownloadReply = nullptr;
+        return;
+    }
+
+    file.write(updateDownloadReply->readAll());
+    file.close();
+
+    updateDownloadReply->deleteLater();
+    updateDownloadReply = nullptr;
+
+    // Confirmer l'installation
+    int result = QMessageBox::question(this, tr("Installation de la mise à jour"),
+                                       tr("La mise à jour %1 a été téléchargée avec succès.\n\n"
+                                          "Voulez-vous l'installer maintenant ?\n\n"
+                                          "L'application va se fermer et l'installateur va démarrer.")
+                                           .arg(pendingUpdateVersion),
+                                       QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+
+    if (result == QMessageBox::Yes) {
+        // Log de l'installation
+        appendLog(tr("🚀 Lancement de l'installateur de mise à jour : %1").arg(setupFilePath));
+
+        // Lancer l'installateur en arrière-plan
+        bool started = QProcess::startDetached(setupFilePath);
+
+        if (started) {
+            appendLog(tr("✅ Installateur lancé avec succès"));
+
+            // Message de confirmation avant fermeture
+            QMessageBox::information(this, tr("Mise à jour en cours"),
+                                     tr("L'installateur de mise à jour a été lancé.\n\n"
+                                        "OnBoarder va maintenant se fermer.\n"
+                                        "Suivez les instructions de l'installateur pour terminer la mise à jour."));
+
+            // Fermer l'application
+            QApplication::quit();
+        } else {
+            QMessageBox::warning(this, tr("Erreur"),
+                                 tr("Impossible de lancer l'installateur.\n\n"
+                                    "Vous pouvez l'exécuter manuellement depuis :\n%1").arg(setupFilePath));
+        }
+    } else {
+        QMessageBox::information(this, tr("Mise à jour reportée"),
+                                 tr("La mise à jour a été sauvegardée dans :\n%1\n\n"
+                                    "Vous pouvez l'installer plus tard en exécutant ce fichier.")
+                                     .arg(setupFilePath));
+    }
+}
 
 void MainWindow::loadApps() {
     QFile file(":/data/apps.json");

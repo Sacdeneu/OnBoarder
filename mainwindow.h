@@ -6,6 +6,10 @@
 #include <QProcess>
 #include <QVector>
 #include <QListWidgetItem>
+#include <QSettings>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -31,6 +35,15 @@ public:
     ~MainWindow();
 
 private slots:
+    void onUpdateDownloadFinished();
+    void onSettingsClicked();
+    void onDarkThemeToggled(bool checked);
+    void onAutoUpdateToggled(bool checked);
+    void onCheckUpdateClicked();
+
+    void checkForUpdates(bool manual = false);
+    void handleUpdateReply(QNetworkReply *reply);
+    void downloadAndInstallUpdate(const QString &url);
     void onInstallClicked();
     void onUninstallClicked();
     void handleProcessOutput();
@@ -42,6 +55,14 @@ private slots:
     void onItemChanged(QListWidgetItem *item);
 
 private:
+    void applyDarkTheme(bool enabled);
+    void loadSettings();
+    void saveSettings();
+    QNetworkReply *updateDownloadReply;
+    QString pendingUpdateVersion;
+    QSettings settings;
+    QNetworkAccessManager *networkManager;
+    bool autoUpdateEnabled;
     void updateStepIndicator(int currentStep);
     bool isCustomAppInstalled(const QString& appName, const QString& executablePath);
     void loadApps();
