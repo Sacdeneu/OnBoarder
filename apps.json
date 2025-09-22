@@ -19,10 +19,27 @@
       }
     },
     {
-      "name": "Visual Studio 2022",
+      "name": "Microsoft Visual Studio Community 2022",
       "icon": "visualstudio.svg",
       "commands": {
-        "windows": "winget install Microsoft.VisualStudio.2022.Community -e --accept-source-agreements --accept-package-agreements"
+        "windows": "winget install --id Microsoft.VisualStudio.2022.Community --override \"--quiet\""
+      }
+    },
+    {
+      "name": "JetBrains Rider",
+      "icon": "rider.svg",
+      "commands": {
+        "windows": "winget install JetBrains.Rider -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask rider",
+        "linux": "flatpak install flathub com.jetbrains.Rider -y"
+      }
+    },
+    {
+      "name": "SourceTree",
+      "icon": "sourcetree.svg",
+      "commands": {
+        "windows": "winget install Atlassian.Sourcetree -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask sourcetree"
       }
     },
     {
@@ -121,48 +138,48 @@
       }
     },
     {
-          "name": "Epic Games Launcher",
-          "icon": "epicgameslauncher.svg",
-          "commands": {
-            "windows": "winget install EpicGames.EpicGamesLauncher -e --accept-source-agreements --accept-package-agreements",
-            "macos": "brew install --cask epic-games"
-          }
-        },
-        {
-          "name": "Microsoft Teams",
-          "icon": "teams.svg",
-          "commands": {
-            "windows": "winget install Microsoft.Teams -e --accept-source-agreements --accept-package-agreements",
-            "macos": "brew install --cask microsoft-teams",
-            "linux": "flatpak install flathub com.microsoft.Teams -y"
-          }
-        },
-        {
-          "name": "Steam",
-          "icon": "steam.svg",
-          "commands": {
-            "windows": "winget install Valve.Steam -e --accept-source-agreements --accept-package-agreements",
-            "macos": "brew install --cask steam",
-            "linux": "flatpak install flathub com.valvesoftware.Steam -y"
-          }
-        },
-        {
-          "name": "Discord",
-          "icon": "discord.svg",
-          "commands": {
-            "windows": "winget install Discord.Discord -e --accept-source-agreements --accept-package-agreements",
-            "macos": "brew install --cask discord",
-            "linux": "flatpak install flathub com.discordapp.Discord -y"
-          }
-        },
-        {
-          "name": "Firefox",
-          "icon": "firefox.svg",
-          "commands": {
-            "windows": "winget install Mozilla.Firefox -e --accept-source-agreements --accept-package-agreements",
-            "macos": "brew install --cask firefox",
-            "linux": "flatpak install flathub org.mozilla.firefox -y"
-          }
-        }
+      "name": "Epic Games Launcher",
+      "icon": "epicgameslauncher.svg",
+      "commands": {
+        "windows": "winget install EpicGames.EpicGamesLauncher -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask epic-games"
+      }
+    },
+    {
+      "name": "Microsoft Teams",
+      "icon": "teams.svg",
+      "commands": {
+        "windows": "winget install Microsoft.Teams -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask microsoft-teams",
+        "linux": "flatpak install flathub com.microsoft.Teams -y"
+      }
+    },
+    {
+      "name": "Steam",
+      "icon": "steam.svg",
+      "commands": {
+        "windows": "winget install Valve.Steam -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask steam",
+        "linux": "flatpak install flathub com.valvesoftware.Steam -y"
+      }
+    },
+    {
+      "name": "Discord",
+      "icon": "discord.svg",
+      "commands": {
+        "windows": "winget install Discord.Discord -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask discord",
+        "linux": "flatpak install flathub com.discordapp.Discord -y"
+      }
+    },
+    {
+      "name": "Firefox",
+      "icon": "firefox.svg",
+      "commands": {
+        "windows": "winget install Mozilla.Firefox -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask firefox",
+        "linux": "flatpak install flathub org.mozilla.firefox -y"
+      }
+    }
   ]
 }

@@ -15,140 +15,434 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="mainLayout">
-    <!-- Stepper -->
     <item>
-     <widget class="QWidget" name="stepIndicatorWidget">
-      <layout class="QHBoxLayout" name="stepIndicatorLayout">
-       <property name="spacing">
-        <number>20</number>
-       </property>
-       <item><spacer name="horizontalSpacer_1"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
-       <!-- Step 1 -->
-       <item>
-        <layout class="QVBoxLayout" name="step1Layout">
-         <item>
-          <widget class="QLabel" name="labelStepCircle1">
-           <property name="minimumSize"><size><width>40</width><height>40</height></size></property>
-           <property name="maximumSize"><size><width>40</width><height>40</height></size></property>
-           <property name="text"><string>1</string></property>
-           <property name="alignment"><set>Qt::AlignCenter</set></property>
-           <property name="styleSheet"><string>QLabel { background-color: #6c757d; color: white; border-radius: 20px; font-weight: bold; font-size: 14px; }</string></property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelStep1">
-           <property name="text"><string>Sélection</string></property>
-           <property name="alignment"><set>Qt::AlignCenter</set></property>
-           <property name="styleSheet"><string>font-size: 12px; color: #6c757d;</string></property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <!-- Step 2 -->
-       <item>
-        <layout class="QVBoxLayout" name="step2Layout">
-         <item>
-          <widget class="QLabel" name="labelStepCircle2">
-           <property name="minimumSize"><size><width>40</width><height>40</height></size></property>
-           <property name="maximumSize"><size><width>40</width><height>40</height></size></property>
-           <property name="text"><string>2</string></property>
-           <property name="alignment"><set>Qt::AlignCenter</set></property>
-           <property name="styleSheet"><string>QLabel { background-color: #6c757d; color: white; border-radius: 20px; font-weight: bold; font-size: 14px; }</string></property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelStep2">
-           <property name="text"><string>Installation</string></property>
-           <property name="alignment"><set>Qt::AlignCenter</set></property>
-           <property name="styleSheet"><string>font-size: 12px; color: #6c757d;</string></property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <!-- Step 3 -->
-       <item>
-        <layout class="QVBoxLayout" name="step3Layout">
-         <item>
-          <widget class="QLabel" name="labelStepCircle3">
-           <property name="minimumSize"><size><width>40</width><height>40</height></size></property>
-           <property name="maximumSize"><size><width>40</width><height>40</height></size></property>
-           <property name="text"><string>3</string></property>
-           <property name="alignment"><set>Qt::AlignCenter</set></property>
-           <property name="styleSheet"><string>QLabel { background-color: #6c757d; color: white; border-radius: 20px; font-weight: bold; font-size: 14px; }</string></property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelStep3">
-           <property name="text"><string>Résumé</string></property>
-           <property name="alignment"><set>Qt::AlignCenter</set></property>
-           <property name="styleSheet"><string>font-size: 12px; color: #6c757d;</string></property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item><spacer name="horizontalSpacer_2"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
-      </layout>
-     </widget>
+     <layout class="QHBoxLayout" name="stepIndicatorLayout">
+      <property name="spacing">
+       <number>20</number>
+      </property>
+      <item>
+       <spacer name="horizontalSpacer_1">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="step1Layout">
+        <item>
+         <widget class="QLabel" name="labelStepCircle1">
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>40</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>40</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string>QLabel { background-color: #6c757d; color: white; border-radius: 20px; font-weight: bold; font-size: 14px; }</string>
+          </property>
+          <property name="text">
+           <string>1</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="labelStep1">
+          <property name="styleSheet">
+           <string>font-size: 12px; color: #6c757d;</string>
+          </property>
+          <property name="text">
+           <string>Sélection</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="step2Layout">
+        <item>
+         <widget class="QLabel" name="labelStepCircle2">
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>40</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>40</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string>QLabel { background-color: #6c757d; color: white; border-radius: 20px; font-weight: bold; font-size: 14px; }</string>
+          </property>
+          <property name="text">
+           <string>2</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="labelStep2">
+          <property name="styleSheet">
+           <string>font-size: 12px; color: #6c757d;</string>
+          </property>
+          <property name="text">
+           <string>Installation</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="step3Layout">
+        <item>
+         <widget class="QLabel" name="labelStepCircle3">
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>40</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>40</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string>QLabel { background-color: #6c757d; color: white; border-radius: 20px; font-weight: bold; font-size: 14px; }</string>
+          </property>
+          <property name="text">
+           <string>3</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="labelStep3">
+          <property name="styleSheet">
+           <string>font-size: 12px; color: #6c757d;</string>
+          </property>
+          <property name="text">
+           <string>Résumé</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
     </item>
-
-    <!-- Pages -->
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
-      <!-- Page Sélection -->
       <widget class="QWidget" name="pageSelect">
        <layout class="QVBoxLayout" name="verticalLayout">
-        <item><widget class="QListWidget" name="listWidget"/></item>
-        <item><widget class="QPushButton" name="installButton"><property name="text"><string>Installer</string></property></widget></item>
-        <item><widget class="QPushButton" name="uninstallButton"><property name="text"><string>Désinstaller</string></property></widget></item>
-        <item><widget class="QPushButton" name="settingsButton"><property name="text"><string>Paramètres</string></property></widget></item>
-	<item>
-<widget class="QPushButton" name="updateButton">
-  <property name="text">
-   <string>Mise à jour disponible</string>
-  </property>
-  <property name="visible">
-   <bool>false</bool>
-  </property>
-  <property name="styleSheet">
-   <string>QPushButton { 
+        <item>
+         <widget class="QListWidget" name="listWidget"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="installButton">
+          <property name="text">
+           <string>Installer</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="uninstallButton">
+          <property name="text">
+           <string>Désinstaller</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="settingsButton">
+          <property name="text">
+           <string>Paramètres</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="updateButton">
+          <property name="visible">
+           <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string>QPushButton { 
      background-color: #28a745; 
      color: white; 
      font-weight: bold; 
      border-radius: 5px; 
    }</string>
-  </property>
- </widget>
-</item>
+          </property>
+          <property name="text">
+           <string>Mise à jour disponible</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
-
-      <!-- Page Installation -->
       <widget class="QWidget" name="pageInstall">
        <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item><widget class="QProgressBar" name="progressBar"/></item>
-        <item><widget class="QCheckBox" name="showLogsCheckBox"><property name="text"><string>Voir les logs</string></property></widget></item>
-        <item><widget class="QTextEdit" name="logTextEdit"><property name="visible"><bool>false</bool></property></widget></item>
+        <item>
+         <widget class="QProgressBar" name="progressBar"/>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="showLogsCheckBox">
+          <property name="text">
+           <string>Voir les logs</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTextEdit" name="logTextEdit">
+          <property name="visible">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
-
-      <!-- Page Résumé -->
       <widget class="QWidget" name="pageSummary">
        <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item><widget class="QTextEdit" name="summaryTextEdit"/></item>
-        <item><widget class="QPushButton" name="restartButton"><property name="text"><string>Retour à l'étape 1</string></property></widget></item>
-        <item><widget class="QPushButton" name="quitButton"><property name="text"><string>Quitter</string></property></widget></item>
+        <item>
+         <widget class="QTextEdit" name="summaryTextEdit"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="restartButton">
+          <property name="text">
+           <string>Retour à l'étape 1</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="quitButton">
+          <property name="text">
+           <string>Quitter</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
-
-      <!-- Page Paramètres -->
       <widget class="QWidget" name="pageSettings">
        <layout class="QVBoxLayout" name="verticalLayout_4">
-        <item><widget class="QCheckBox" name="darkThemeCheckBox"><property name="text"><string>Activer le thème sombre</string></property></widget></item>
-        <item><widget class="QCheckBox" name="autoUpdateCheckBox"><property name="text"><string>Activer la mise à jour automatique</string></property></widget></item>
-        <item><widget class="QPushButton" name="checkUpdateButton"><property name="text"><string>Vérifier les mises à jour maintenant</string></property></widget></item>
+        <item>
+         <widget class="QCheckBox" name="darkThemeCheckBox">
+          <property name="text">
+           <string>Activer le thème sombre</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="autoUpdateCheckBox">
+          <property name="text">
+           <string>Activer la mise à jour automatique</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="checkUpdateButton">
+          <property name="text">
+           <string>Vérifier les mises à jour maintenant</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="backToMainButton">
+          <property name="text">
+           <string>Retour</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
-
+      <widget class="QWidget" name="pageVisualStudioConfig">
+       <layout class="QVBoxLayout" name="vsConfigLayout">
+        <item>
+         <widget class="QLabel" name="vsConfigTitle">
+          <property name="text">
+           <string>Configuration Visual Studio 2022 Community</string>
+          </property>
+          <property name="styleSheet">
+           <string>font-size: 16px; font-weight: bold; margin: 10px;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QScrollArea" name="scrollArea">
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="scrollAreaWidgetContents">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>580</width>
+             <height>300</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="workloadsLayout">
+            <item>
+             <widget class="QLabel" name="workloadsLabel">
+              <property name="text">
+               <string>Sélectionnez les charges de travail à installer :</string>
+              </property>
+              <property name="styleSheet">
+               <string>font-weight: bold; margin: 5px;</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="webDevCheckBox">
+              <property name="text">
+               <string>Développement web ASP.NET</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="desktopDevCheckBox">
+              <property name="text">
+               <string>Développement Desktop avec C++</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="netDesktopCheckBox">
+              <property name="text">
+               <string>Développement Desktop .NET</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="gameDevCheckBox">
+              <property name="text">
+               <string>Développement de jeux avec Unity</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="mobileDevCheckBox">
+              <property name="text">
+               <string>Développement mobile avec .NET</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="pythonDevCheckBox">
+              <property name="text">
+               <string>Développement Python</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="dataDevCheckBox">
+              <property name="text">
+               <string>Science des données et applications analytiques</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="azureDevCheckBox">
+              <property name="text">
+               <string>Développement Azure</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="nodeJSDevCheckBox">
+              <property name="text">
+               <string>Développement Node.js</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="includeRecommendedCheckBox">
+              <property name="text">
+               <string>Inclure les composants recommandés</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="vsConfigButtonsLayout">
+          <item>
+           <widget class="QPushButton" name="vsConfigCancelButton">
+            <property name="text">
+             <string>Annuler</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="vsConfigOkButton">
+            <property name="text">
+             <string>OK</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>

@@ -23,6 +23,9 @@
         <file>discord.svg</file>
         <file>teams.svg</file>
         <file>epicgameslauncher.svg</file>
+        <file>sourcetree.svg</file>
+        <file>rider.svg</file>
+        <file>settings.svg</file>
     </qresource>
     <qresource prefix="/translations">
         <file>app_manager_en.ts</file>

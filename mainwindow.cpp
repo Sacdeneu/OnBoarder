@@ -2,10 +2,12 @@
 #include "ui_mainwindow.h"
 #include <QProgressDialog>
 #include <QFile>
+#include <QHBoxLayout>
 #include <QTimer>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QLabel>
 #include <QDebug>
 #include <QIcon>
 #include <QBrush>
@@ -38,7 +40,16 @@ MainWindow::MainWindow(QWidget *parent)
     updateDownloadReply(nullptr)
 {
     ui->setupUi(this);
-
+    QFile testFile(":/data/apps.json");
+    if (testFile.open(QIODevice::ReadOnly)) {
+        ui->logTextEdit->append("✅ Fichier JSON accessible");
+        ui->logTextEdit->append("Contenu (100 premiers caractères): " + QString(testFile.read(100)));
+        testFile.close();
+    } else {
+        ui->logTextEdit->append("❌ Fichier JSON INACCESSIBLE");
+    }
+    ui->logTextEdit->setVisible(true);
+    ui->showLogsCheckBox->setChecked(true);
     loadSettings();
     // Connect buttons
     connect(ui->installButton, &QPushButton::clicked, this, &MainWindow::onInstallClicked);
@@ -55,6 +66,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->darkThemeCheckBox, &QCheckBox::toggled, this, &MainWindow::onDarkThemeToggled);
     connect(ui->autoUpdateCheckBox, &QCheckBox::toggled, this, &MainWindow::onAutoUpdateToggled);
     connect(ui->checkUpdateButton, &QPushButton::clicked, this, &MainWindow::onCheckUpdateClicked);
+    connect(ui->backToMainButton, &QPushButton::clicked, this, &MainWindow::onBackToMainClicked);
+    connect(ui->vsConfigOkButton, &QPushButton::clicked, this, &MainWindow::onVSConfigOkClicked);
+    connect(ui->vsConfigCancelButton, &QPushButton::clicked, this, &MainWindow::onVSConfigCancelClicked);
 
     if (autoUpdateEnabled) {
         QTimer::singleShot(0, this, [this]() { checkForUpdates(false); });
@@ -72,12 +86,13 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(tr("Gestionnaire d'applications"));
 
     loadApps();
+
     updateStepIndicator(1);
 }
 
 void MainWindow::onUpdateButtonClicked() {
-    ui->stackedWidget->setCurrentIndex(3); // pageSettings
-    // Optionnellement, déclencher automatiquement la vérification
+    ui->stackedWidget->setCurrentIndex(3);
+    hideStepIndicator(true);
     onCheckUpdateClicked();
 }
 
@@ -90,7 +105,6 @@ MainWindow::~MainWindow() {
 }bool MainWindow::isCustomAppInstalled(const QString &appName, const QString &executablePath) {
 #ifdef Q_OS_WIN
     if (appName == "Wrike") {
-        // Vérifier si l'exécutable existe directement (par exemple chemin utilisateur)
         QString expandedPath = executablePath;
         expandedPath.replace("%USERNAME%", qgetenv("USERNAME"));
 
@@ -163,7 +177,8 @@ void MainWindow::saveSettings() {
     settings.setValue("autoUpdate", ui->autoUpdateCheckBox->isChecked());
 }
 void MainWindow::onSettingsClicked() {
-    ui->stackedWidget->setCurrentIndex(3); // pageSettings
+    ui->stackedWidget->setCurrentIndex(3);
+    hideStepIndicator(true);
 }
 
 void MainWindow::onDarkThemeToggled(bool checked) {
@@ -367,7 +382,6 @@ void MainWindow::onUpdateDownloadFinished() {
                                      .arg(setupFilePath));
     }
 }
-
 void MainWindow::loadApps() {
     QFile file(":/data/apps.json");
     if (!file.open(QIODevice::ReadOnly)) {
@@ -376,10 +390,12 @@ void MainWindow::loadApps() {
     }
 
     QByteArray data = file.readAll();
+    qDebug() << "Taille des données JSON:" << data.size() << "bytes";
     file.close();
 
     QJsonDocument doc = QJsonDocument::fromJson(data);
     if (!doc.isObject()) {
+        qDebug() << "ERREUR: JSON invalide";
         appendLog(tr("Erreur : apps.json invalide"));
         return;
     }
@@ -389,78 +405,105 @@ void MainWindow::loadApps() {
     apps.clear();
     ui->listWidget->clear();
 
-    appendLog(tr("=== Chargement des applications ==="));
-
     for (const QJsonValue& val : appList) {
         QJsonObject obj = val.toObject();
-
         AppStatus app;
         app.name = obj.value("name").toString();
         app.icon = obj.value("icon").toString();
-        QJsonObject cmds = obj.value("commands").toObject();
 
+        QJsonObject cmds = obj.value("commands").toObject();
         app.installCommand = cmds.value(OS_KEY).toString();
+
+        // Create item in listWidget FIRST
+        QListWidgetItem *item = new QListWidgetItem(QIcon(":/icons/" + app.icon), "");
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setCheckState(Qt::Unchecked);
+        item->setSizeHint(QSize(400, 45)); // Taille par défaut
+        app.item = item;
 
         // Vérifier si c'est une installation personnalisée
         if (obj.contains("install_method") && obj.value("install_method").toString() == "custom") {
-            // Installation personnalisée
             app.uninstallCommand = obj.value("uninstall_command").toString();
             QString executablePath = obj.value("executable_path").toString();
-
-            appendLog(tr("🔍 %1 - Installation personnalisée détectée").arg(app.name));
             app.state = isCustomAppInstalled(app.name, executablePath) ? AppState::Installed : AppState::NotInstalled;
         } else {
-            // Installation via winget classique
             QString wingetId = extractWingetId(app.installCommand);
-            appendLog(tr("🔍 %1 - ID extrait: %2").arg(app.name, wingetId.isEmpty() ? tr("VIDE") : wingetId));
-
             if (!wingetId.isEmpty()) {
                 app.uninstallCommand = QString("winget uninstall %1 --silent").arg(wingetId);
             } else {
                 app.uninstallCommand = "";
             }
-
-            // Determine state
             app.state = isAppInstalledWinget(wingetId) ? AppState::Installed : AppState::NotInstalled;
         }
 
-        // Create item in listWidget
-        QListWidgetItem *item = new QListWidgetItem(QIcon(":/icons/" + app.icon), "");
-        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-        item->setCheckState(Qt::Unchecked);
-
-        app.item = item;
-        updateItemText(app);
-
+        // Ajouter l'item à la liste AVANT de le configurer
         ui->listWidget->addItem(item);
+
+        // Vérification spécifique pour Visual Studio
+        if (app.name.contains("Microsoft Visual Studio Community 2022", Qt::CaseInsensitive)) {
+            // Charger la configuration sauvegardée
+            QString savedConfig = settings.value("vsConfig", "").toString();
+            if (!savedConfig.isEmpty()) {
+                app.installCommand = savedConfig;
+                app.customConfigData = savedConfig;
+            }
+            addConfigButtonToItem(app);
+        } else {
+            // Pour les autres applications, utiliser le texte normal
+            updateItemText(app);
+        }
+
         apps.append(app);
     }
 
-    appendLog(tr("=== Fin du chargement ==="));
+    // Forcer une mise à jour de la liste
+    ui->listWidget->setUniformItemSizes(false);
+    ui->listWidget->update();
     updateButtons();
 }
 
-QString MainWindow::extractWingetId(const QString &installCommand) {
-    // Extract ID from winget install command
-    QStringList parts = installCommand.split(" ", Qt::SkipEmptyParts);
+void MainWindow::hideStepIndicator(bool hide) {
+    ui->labelStepCircle1->setVisible(!hide);
+    ui->labelStep1->setVisible(!hide);
+    ui->labelStepCircle2->setVisible(!hide);
+    ui->labelStep2->setVisible(!hide);
+    ui->labelStepCircle3->setVisible(!hide);
+    ui->labelStep3->setVisible(!hide);
+}
 
-    // Find "install" keyword and get the next part
+void MainWindow::onBackToMainClicked() {
+    ui->stackedWidget->setCurrentIndex(0);
+    hideStepIndicator(false);
+    updateStepIndicator(1);
+}
+
+QString MainWindow::extractWingetId(const QString &installCommand) {
+    QStringList parts = installCommand.split(" ", Qt::SkipEmptyParts);
+    for (int i = 0; i < parts.size() - 1; ++i) {
+        if (parts[i] == "--id") {
+            return parts[i + 1];
+        }
+    }
+    // Ancienne logique pour les commandes sans --id
     for (int i = 0; i < parts.size() - 1; ++i) {
         if (parts[i] == "install") {
             QString id = parts[i + 1];
-            // Remove any flags that might be attached (like -e)
-            if (id.startsWith("-")) {
-                continue; // skip flags and get next part
+            if (!id.startsWith("-")) {
+                return id;
             }
-            return id;
         }
     }
-
     return "";
 }
 
 void MainWindow::updateStepIndicator(int currentStep) {
-    // Style pour l'étape active (bleue)
+    int currentPage = ui->stackedWidget->currentIndex();
+    if (currentPage == 3 || currentPage == 4) {
+        hideStepIndicator(true);
+        return;
+    }
+
+    hideStepIndicator(false);
     QString activeStyle = "QLabel {"
                           "background-color: #0d6efd;"
                           "color: white;"
@@ -717,6 +760,44 @@ void MainWindow::handleProcessFinished(int exitCode, QProcess::ExitStatus exitSt
     }
 }
 
+QString MainWindow::generateVSInstallCommand() {
+    QString baseCommand = "winget install --id Microsoft.VisualStudio.2022.Community --override \"";
+    QStringList workloads;
+
+    if (ui->webDevCheckBox->isChecked())
+        workloads << "--add Microsoft.VisualStudio.Workload.NetWeb";
+    if (ui->desktopDevCheckBox->isChecked())
+        workloads << "--add Microsoft.VisualStudio.Workload.NativeDesktop";
+    if (ui->netDesktopCheckBox->isChecked())
+        workloads << "--add Microsoft.VisualStudio.Workload.ManagedDesktop";
+    if (ui->gameDevCheckBox->isChecked())
+        workloads << "--add Microsoft.VisualStudio.Workload.ManagedGame";
+    if (ui->mobileDevCheckBox->isChecked())
+        workloads << "--add Microsoft.VisualStudio.Workload.NetCrossPlat";
+    if (ui->pythonDevCheckBox->isChecked())
+        workloads << "--add Microsoft.VisualStudio.Workload.Python";
+    if (ui->dataDevCheckBox->isChecked())
+        workloads << "--add Microsoft.VisualStudio.Workload.DataScience";
+    if (ui->azureDevCheckBox->isChecked())
+        workloads << "--add Microsoft.VisualStudio.Workload.Azure";
+    if (ui->nodeJSDevCheckBox->isChecked())
+        workloads << "--add Microsoft.VisualStudio.Workload.Node";
+
+    QString workloadsStr = workloads.join(" ");
+
+    if (ui->includeRecommendedCheckBox->isChecked())
+        workloadsStr += " --includeRecommended";
+
+    workloadsStr += " --quiet";
+
+    // Si aucun workload n'est sélectionné, installer juste l'IDE de base
+    if (workloads.isEmpty()) {
+        return "winget install --id Microsoft.VisualStudio.2022.Community --override \"--quiet\"";
+    }
+
+    return baseCommand + workloadsStr + "\"";
+}
+
 void MainWindow::onUninstallClicked() {
     uninstalling = true;
     currentAppIndex = 0;
@@ -826,29 +907,229 @@ void MainWindow::startNextUninstall() {
 #endif
 }
 
-
-void MainWindow::updateItemText(AppStatus &app) {
+void MainWindow::updateStatusLabel(QLabel *statusLabel, const AppStatus &app) {
     QString statusStr;
-    QColor color;
-
+    QString colorStyle;
     switch (app.state) {
     case AppState::Installed:
         statusStr = tr("[installé]");
-        color = Qt::darkGreen;
+        colorStyle = "color: green; font-weight: bold;";
         break;
     case AppState::Installing:
         statusStr = tr("[en cours...]");
-        color = Qt::blue;
+        colorStyle = "color: blue; font-weight: bold;";
         break;
     case AppState::NotInstalled:
     default:
         statusStr = tr("[non installé]");
-        color = Qt::red;
+        colorStyle = "color: red; font-weight: bold;";
         break;
     }
+    statusLabel->setText(statusStr);
+    statusLabel->setStyleSheet(colorStyle);
+}
 
-    app.item->setText(app.name + " " + statusStr);
-    app.item->setForeground(QBrush(color));
+void MainWindow::addConfigButtonToItem(AppStatus& app) {
+    if (!app.name.contains("Microsoft Visual Studio Community 2022", Qt::CaseInsensitive)) {
+        return;
+    }
+
+    if (!app.item) {
+        return;
+    }
+
+    app.hasCustomConfig = true;
+
+    // Supprimer l'ancien widget s'il existe
+    QWidget *oldWidget = ui->listWidget->itemWidget(app.item);
+    if (oldWidget) {
+        oldWidget->deleteLater();
+    }
+
+    // Créer le widget cliquable personnalisé
+    ClickableItemWidget *itemWidget = new ClickableItemWidget(app.item, ui->listWidget);
+
+    QHBoxLayout *layout = new QHBoxLayout(itemWidget);
+    layout->setContentsMargins(5, 0, 5, 0);
+    layout->setSpacing(10);
+
+    // Label pour le nom avec la même couleur que les autres apps selon l'état
+    QLabel *nameLabel = new QLabel("Microsoft Visual Studio Community 2022", itemWidget);
+    nameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    // Appliquer les mêmes couleurs que les autres applications
+    QString textStyle;
+    switch (app.state) {
+    case AppState::Installed:
+        textStyle = "font-size: 12px; font-weight: normal; color: #28a745;"; // Vert
+        break;
+    case AppState::Installing:
+        textStyle = "font-size: 12px; font-weight: normal; color: #007bff;"; // Bleu
+        break;
+    case AppState::NotInstalled:
+    default:
+        textStyle = "font-size: 12px; font-weight: normal; color: #dc3545;"; // Rouge
+        break;
+    }
+    nameLabel->setStyleSheet(textStyle);
+    nameLabel->setObjectName("nameLabel"); // Pour pouvoir le retrouver plus tard
+
+    // Label pour le statut
+    QLabel *statusLabel = new QLabel(itemWidget);
+    statusLabel->setObjectName("statusLabel");
+    statusLabel->setMinimumWidth(100);
+    updateStatusLabel(statusLabel, app);
+
+    // Bouton de configuration
+    ConfigButton *configButton = new ConfigButton(itemWidget);
+
+    // Connecter le signal de clic du widget pour mettre à jour les boutons
+    connect(itemWidget, &ClickableItemWidget::itemClicked, this, &MainWindow::updateButtons);
+
+    // Connecter le bouton de configuration
+    connect(configButton, &QPushButton::clicked, [this]() {
+        for (int i = 0; i < apps.size(); ++i) {
+            if (apps[i].name.contains("Microsoft Visual Studio Community 2022", Qt::CaseInsensitive)) {
+                showVSConfigDialog(i);
+                return;
+            }
+        }
+    });
+
+    layout->addWidget(nameLabel);
+    layout->addWidget(statusLabel);
+    layout->addWidget(configButton);
+
+    ui->listWidget->setItemWidget(app.item, itemWidget);
+    app.item->setSizeHint(QSize(300, 40));
+}
+
+void MainWindow::showVSConfigDialog(int appIndex) {
+    currentConfigAppIndex = appIndex;
+
+    // Charger la configuration précédente si elle existe
+    QString savedConfig = settings.value("vsConfig", "").toString();
+
+    // Réinitialiser toutes les checkboxes
+    ui->webDevCheckBox->setChecked(false);
+    ui->desktopDevCheckBox->setChecked(false);
+    ui->netDesktopCheckBox->setChecked(false);
+    ui->gameDevCheckBox->setChecked(false);
+    ui->mobileDevCheckBox->setChecked(false);
+    ui->pythonDevCheckBox->setChecked(false);
+    ui->dataDevCheckBox->setChecked(false);
+    ui->azureDevCheckBox->setChecked(false);
+    ui->nodeJSDevCheckBox->setChecked(false);
+    ui->includeRecommendedCheckBox->setChecked(true);
+
+    // Charger la configuration sauvegardée
+    if (!savedConfig.isEmpty()) {
+        if (savedConfig.contains("Microsoft.VisualStudio.Workload.NetWeb"))
+            ui->webDevCheckBox->setChecked(true);
+        if (savedConfig.contains("Microsoft.VisualStudio.Workload.NativeDesktop"))
+            ui->desktopDevCheckBox->setChecked(true);
+        if (savedConfig.contains("Microsoft.VisualStudio.Workload.ManagedDesktop"))
+            ui->netDesktopCheckBox->setChecked(true);
+        if (savedConfig.contains("Microsoft.VisualStudio.Workload.ManagedGame"))
+            ui->gameDevCheckBox->setChecked(true);
+        if (savedConfig.contains("Microsoft.VisualStudio.Workload.NetCrossPlat"))
+            ui->mobileDevCheckBox->setChecked(true);
+        if (savedConfig.contains("Microsoft.VisualStudio.Workload.Python"))
+            ui->pythonDevCheckBox->setChecked(true);
+        if (savedConfig.contains("Microsoft.VisualStudio.Workload.DataScience"))
+            ui->dataDevCheckBox->setChecked(true);
+        if (savedConfig.contains("Microsoft.VisualStudio.Workload.Azure"))
+            ui->azureDevCheckBox->setChecked(true);
+        if (savedConfig.contains("Microsoft.VisualStudio.Workload.Node"))
+            ui->nodeJSDevCheckBox->setChecked(true);
+        if (!savedConfig.contains("--includeRecommended"))
+            ui->includeRecommendedCheckBox->setChecked(false);
+    }
+
+    ui->stackedWidget->setCurrentIndex(4); // pageVisualStudioConfig
+    hideStepIndicator(true);
+}
+
+void MainWindow::onVSConfigOkClicked() {
+    if (currentConfigAppIndex == -1 || currentConfigAppIndex >= apps.size()) {
+        return;
+    }
+
+    QString customCommand = generateVSInstallCommand();
+    apps[currentConfigAppIndex].installCommand = customCommand;
+    apps[currentConfigAppIndex].customConfigData = customCommand;
+
+    settings.setValue("vsConfig", customCommand);
+    settings.sync();
+
+    appendLog(tr("✅ Configuration Visual Studio sauvegardée"));
+    appendLog(tr("🔧 Commande générée : %1").arg(customCommand));
+
+    ui->stackedWidget->setCurrentIndex(0);
+    hideStepIndicator(false);
+    updateStepIndicator(1);
+    currentConfigAppIndex = -1;
+}
+
+void MainWindow::onVSConfigCancelClicked() {
+    ui->stackedWidget->setCurrentIndex(0);
+    hideStepIndicator(false);
+    updateStepIndicator(1);
+    currentConfigAppIndex = -1;
+}
+
+void MainWindow::updateItemText(AppStatus &app) {
+    if (app.hasCustomConfig) {
+        // Pour Visual Studio avec configuration personnalisée
+        QWidget *itemWidget = ui->listWidget->itemWidget(app.item);
+        if (itemWidget) {
+            // Mettre à jour le label de statut
+            QLabel *statusLabel = itemWidget->findChild<QLabel*>("statusLabel");
+            if (statusLabel) {
+                updateStatusLabel(statusLabel, app);
+            }
+
+            // Mettre à jour la couleur du nom selon l'état
+            QLabel *nameLabel = itemWidget->findChild<QLabel*>("nameLabel");
+            if (nameLabel) {
+                QString textStyle;
+                switch (app.state) {
+                case AppState::Installed:
+                    textStyle = "font-size: 14px; font-weight: normal; color: #28a745;"; // Vert
+                    break;
+                case AppState::Installing:
+                    textStyle = "font-size: 14px; font-weight: normal; color: #007bff;"; // Bleu
+                    break;
+                case AppState::NotInstalled:
+                default:
+                    textStyle = "font-size: 14px; font-weight: normal; color: #dc3545;"; // Rouge
+                    break;
+                }
+                nameLabel->setStyleSheet(textStyle);
+            }
+        }
+    } else {
+        // Pour les éléments normaux, utiliser l'ancien système
+        QString statusStr;
+        QColor color;
+        switch (app.state) {
+        case AppState::Installed:
+            statusStr = tr("[installé]");
+            color = Qt::darkGreen;
+            break;
+        case AppState::Installing:
+            statusStr = tr("[en cours...]");
+            color = Qt::blue;
+            break;
+        case AppState::NotInstalled:
+        default:
+            statusStr = tr("[non installé]");
+            color = Qt::red;
+            break;
+        }
+        app.item->setText(app.name + " " + statusStr);
+        app.item->setForeground(QBrush(color));
+    }
 }
 
 void MainWindow::updateSummary() {
@@ -894,16 +1175,33 @@ void MainWindow::onShowLogsToggled(bool checked) {
 void MainWindow::onRestartClicked() {
     ui->stackedWidget->setCurrentIndex(0);
     updateStepIndicator(1);
+    hideStepIndicator(false);
     ui->progressBar->setValue(0);
     ui->logTextEdit->clear();
     ui->summaryTextEdit->clear();
 
     // Reset states and check states
     for (AppStatus& app : apps) {
-        QString wingetId = extractWingetId(app.installCommand);
-        app.state = isAppInstalledWinget(wingetId) ? AppState::Installed : AppState::NotInstalled;
         app.item->setCheckState(Qt::Unchecked);
-        updateItemText(app);
+
+        if (app.hasCustomConfig) {
+            // Pour Visual Studio avec configuration personnalisée
+            QString wingetId = extractWingetId(app.installCommand);
+            app.state = isAppInstalledWinget(wingetId) ? AppState::Installed : AppState::NotInstalled;
+            updateItemText(app); // Cela mettra à jour le label de statut dans le widget personnalisé
+        } else {
+            // Pour les applications normales
+            if (app.name.contains("Wrike", Qt::CaseInsensitive)) {
+                // Application avec installation personnalisée
+                QString executablePath = ""; // Vous devrez extraire cela du JSON si nécessaire
+                app.state = isCustomAppInstalled(app.name, executablePath) ? AppState::Installed : AppState::NotInstalled;
+            } else {
+                // Applications winget normales
+                QString wingetId = extractWingetId(app.installCommand);
+                app.state = isAppInstalledWinget(wingetId) ? AppState::Installed : AppState::NotInstalled;
+            }
+            updateItemText(app);
+        }
     }
 
     updateButtons();
