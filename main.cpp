@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
     // Handle Squirrel/Velopack lifecycle hooks
     for (int i = 1; i < argc; ++i) {
         QString arg = QString::fromLocal8Bit(argv[i]);
-        if (arg.startsWith("--squirrel-") || arg.startsWith("--velopack-")) {
+        if (arg.startsWith("--squirrel-") || arg.startsWith("--velopack-") || arg.startsWith("--veloapp-")) {
             return 0; // Exit immediately to let the installer finish
         }
     }
