@@ -30,14 +30,14 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    process(nullptr),
-    currentAppIndex(0),
-    uninstalling(false),
+    updateDownloadReply(nullptr),
     settings("Sacdeneu", "OnBoarder"),
     networkManager(new QNetworkAccessManager(this)),
     autoUpdateEnabled(false),
-    updateDownloadReply(nullptr)
+    ui(new Ui::MainWindow),
+    process(nullptr),
+    currentAppIndex(0),
+    uninstalling(false)
 {
     ui->setupUi(this);
     QFile testFile(":/data/apps.json");
@@ -82,8 +82,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->installButton->setEnabled(false);
     ui->uninstallButton->setEnabled(false);
 
-    // Set window title
-    setWindowTitle(tr("Gestionnaire d'applications"));
+    // Set window title and icon
+    setWindowTitle(tr("OnBoarder"));
+    setWindowIcon(QIcon(":/icons/favicon.svg"));
 
     loadApps();
 
@@ -156,9 +157,98 @@ MainWindow::~MainWindow() {
 
 void MainWindow::applyDarkTheme(bool enabled) {
     if (enabled) {
-        qApp->setStyleSheet("QWidget { background-color: #121212; color: #e0e0e0; }");
+        // True Dark Premium Theme (#050505 background)
+        qApp->setStyleSheet(
+            "QMainWindow { background-color: #050505; }"
+            "QWidget { background-color: #050505; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }"
+            "QWidget#sidebarWidget { background-color: #1e1e1e; }" /* Sidebar darker but distinct */
+            "QWidget#step1Widget, QWidget#step2Widget, QWidget#step3Widget { background-color: transparent; }"
+            "QPushButton { "
+            "  background-color: #121214; border: 1px solid #1c1c1f; border-radius: 6px; "
+            "  padding: 8px 16px; color: #ffffff; font-weight: 500; "
+            "}"
+            "QPushButton:hover { background-color: #1c1c1f; border-color: #2d2d30; }"
+            "QPushButton:pressed { background-color: #050505; }"
+            "QPushButton:disabled { background-color: #0a0a0c; color: #3f3f46; border-color: #141416; }"
+            "QListWidget { "
+            "  background-color: #08080a; border: 1px solid #141416; border-radius: 8px; "
+            "  padding: 5px; outline: none; "
+            "}"
+            "QListWidget::item { "
+            "  padding: 10px; border-bottom: 1px solid #0d0d0f; border-radius: 4px; "
+            "}"
+            "QListWidget::item:selected { background-color: #121214; color: #3b82f6; }"
+            "QListWidget::item:hover { background-color: #0d0d0f; }"
+            "QScrollBar:vertical { "
+            "  border: none; background: #050505; width: 10px; margin: 0px; "
+            "}"
+            "QScrollBar::handle:vertical { "
+            "  background: #27272a; min-height: 20px; border-radius: 5px; margin: 2px; "
+            "}"
+            "QScrollBar::handle:vertical:hover { background: #3f3f46; }"
+            "QScrollBar::add-line:vertical { height: 0px; subcontrol-position: bottom; subcontrol-origin: margin; }"
+            "QScrollBar::sub-line:vertical { height: 0px; subcontrol-position: top; subcontrol-origin: margin; }"
+            "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }"
+            "QScrollBar:horizontal { "
+            "  border: none; background: #050505; height: 10px; margin: 0px; "
+            "}"
+            "QScrollBar::handle:horizontal { "
+            "  background: #27272a; min-width: 20px; border-radius: 5px; margin: 2px; "
+            "}"
+            "QScrollBar::handle:horizontal:hover { background: #3f3f46; }"
+            "QScrollBar::add-line:horizontal { width: 0px; subcontrol-position: right; subcontrol-origin: margin; }"
+            "QScrollBar::sub-line:horizontal { width: 0px; subcontrol-position: left; subcontrol-origin: margin; }"
+            "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background: none; }"
+            "QProgressBar { "
+            "  border: 1px solid #1c1c1f; border-radius: 6px; background-color: #08080a; "
+            "  text-align: center; color: transparent; height: 6px; "
+            "}"
+            "QProgressBar::chunk { background-color: #3b82f6; border-radius: 5px; }"
+            "QTextEdit { background-color: #08080a; border: 1px solid #1c1c1f; border-radius: 8px; color: #e4e4e7; }"
+            "QCheckBox { spacing: 8px; }"
+            "QScrollArea { border: none; background-color: transparent; }"
+            "QLabel#vsConfigTitle { color: #ffffff; font-size: 18px; font-weight: bold; }"
+            "QLabel#workloadsLabel { color: #a1a1aa; }"
+        );
     } else {
-        qApp->setStyleSheet("");
+        // Light Theme polished
+        qApp->setStyleSheet(
+            "QMainWindow { background-color: #ffffff; }"
+            "QWidget { background-color: #ffffff; color: #18181b; font-family: 'Segoe UI', sans-serif; }"
+            "QWidget#sidebarWidget { background-color: #f3f3f3; }" /* Sidebar light grey */
+            "QWidget#step1Widget, QWidget#step2Widget, QWidget#step3Widget { background-color: transparent; }"
+            "QPushButton { "
+            "  background-color: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 6px; "
+            "  padding: 8px 16px; color: #18181b; font-weight: 500; "
+            "}"
+            "QPushButton:hover { background-color: #e4e4e7; border-color: #d4d4d8; }"
+            "QListWidget { background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 8px; }"
+            "QScrollBar:vertical { "
+            "  border: none; background: #f4f4f5; width: 10px; margin: 0px; "
+            "}"
+            "QScrollBar::handle:vertical { "
+            "  background: #d4d4d8; min-height: 20px; border-radius: 5px; margin: 2px; "
+            "}"
+            "QScrollBar::handle:vertical:hover { background: #a1a1aa; }"
+            "QScrollBar::add-line:vertical { height: 0px; subcontrol-position: bottom; subcontrol-origin: margin; }"
+            "QScrollBar::sub-line:vertical { height: 0px; subcontrol-position: top; subcontrol-origin: margin; }"
+            "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }"
+            "QScrollBar:horizontal { "
+            "  border: none; background: #f4f4f5; height: 10px; margin: 0px; "
+            "}"
+            "QScrollBar::handle:horizontal { "
+            "  background: #d4d4d8; min-width: 20px; border-radius: 5px; margin: 2px; "
+            "}"
+            "QScrollBar::handle:horizontal:hover { background: #a1a1aa; }"
+            "QScrollBar::add-line:horizontal { width: 0px; subcontrol-position: right; subcontrol-origin: margin; }"
+            "QScrollBar::sub-line:horizontal { width: 0px; subcontrol-position: left; subcontrol-origin: margin; }"
+            "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background: none; }"
+            "QProgressBar { "
+            "  border: 1px solid #e4e4e7; border-radius: 6px; background-color: #f4f4f5; "
+            "  text-align: center; color: transparent; height: 6px; "
+            "}"
+            "QProgressBar::chunk { background-color: #2563eb; border-radius: 5px; }"
+        );
     }
 }
 
@@ -184,6 +274,11 @@ void MainWindow::onSettingsClicked() {
 void MainWindow::onDarkThemeToggled(bool checked) {
     applyDarkTheme(checked);
     saveSettings();
+    
+    // Rafraîchir les couleurs de tous les items
+    for (AppStatus &app : apps) {
+        updateItemText(app);
+    }
 }
 
 void MainWindow::onAutoUpdateToggled(bool checked) {
@@ -383,6 +478,8 @@ void MainWindow::onUpdateDownloadFinished() {
     }
 }
 void MainWindow::loadApps() {
+    installedWingetIds = getInstalledWingetIds();
+
     QFile file(":/data/apps.json");
     if (!file.open(QIODevice::ReadOnly)) {
         appendLog(tr("Erreur : impossible d'ouvrir apps.json"));
@@ -433,14 +530,14 @@ void MainWindow::loadApps() {
             } else {
                 app.uninstallCommand = "";
             }
-            app.state = isAppInstalledWinget(wingetId) ? AppState::Installed : AppState::NotInstalled;
+            app.state = isAppInstalledWinget(wingetId, app.name) ? AppState::Installed : AppState::NotInstalled;
         }
 
         // Ajouter l'item à la liste AVANT de le configurer
         ui->listWidget->addItem(item);
 
         // Vérification spécifique pour Visual Studio
-        if (app.name.contains("Microsoft Visual Studio Community 2022", Qt::CaseInsensitive)) {
+        if (app.name.contains("Microsoft Visual Studio Community 2026", Qt::CaseInsensitive)) {
             // Charger la configuration sauvegardée
             QString savedConfig = settings.value("vsConfig", "").toString();
             if (!savedConfig.isEmpty()) {
@@ -463,12 +560,9 @@ void MainWindow::loadApps() {
 }
 
 void MainWindow::hideStepIndicator(bool hide) {
-    ui->labelStepCircle1->setVisible(!hide);
-    ui->labelStep1->setVisible(!hide);
-    ui->labelStepCircle2->setVisible(!hide);
-    ui->labelStep2->setVisible(!hide);
-    ui->labelStepCircle3->setVisible(!hide);
-    ui->labelStep3->setVisible(!hide);
+    if (ui->sidebarWidget) {
+        ui->sidebarWidget->setVisible(!hide);
+    }
 }
 
 void MainWindow::onBackToMainClicked() {
@@ -504,48 +598,28 @@ void MainWindow::updateStepIndicator(int currentStep) {
     }
 
     hideStepIndicator(false);
-    QString activeStyle = "QLabel {"
-                          "background-color: #0d6efd;"
-                          "color: white;"
-                          "border-radius: 20px;"
-                          "font-weight: bold;"
-                          "font-size: 14px;"
-                          "}";
+    
+    // Logique simplifiée : Texte vert pour actif/terminé, Gris pour inactif
+    // Pas de cercles, juste du texte
+    
+    bool isDark = settings.value("darkTheme", false).toBool();
+    QString activeColor = "#10b981"; // Vert
+    QString inactiveColor = isDark ? "#a1a1aa" : "#6c757d"; // Gris adapté au thème
+    
+    QString activeStyle = QString("font-size: 13px; color: %1; font-weight: bold; background: transparent;").arg(activeColor);
+    QString inactiveStyle = QString("font-size: 13px; color: %1; background: transparent;").arg(inactiveColor);
 
-    // Style pour les étapes inactives (grises)
-    QString inactiveStyle = "QLabel {"
-                            "background-color: #6c757d;"
-                            "color: white;"
-                            "border-radius: 20px;"
-                            "font-weight: bold;"
-                            "font-size: 14px;"
-                            "}";
-
-    // Style pour les étapes terminées (verte)
-    QString completedStyle = "QLabel {"
-                             "background-color: #198754;"
-                             "color: white;"
-                             "border-radius: 20px;"
-                             "font-weight: bold;"
-                             "font-size: 14px;"
-                             "}";
-
-    // Réinitialiser tous les cercles
-    ui->labelStepCircle1->setStyleSheet(currentStep > 1 ? completedStyle : (currentStep == 1 ? activeStyle : inactiveStyle));
-    ui->labelStepCircle2->setStyleSheet(currentStep > 2 ? completedStyle : (currentStep == 2 ? activeStyle : inactiveStyle));
-    ui->labelStepCircle3->setStyleSheet(currentStep == 3 ? activeStyle : inactiveStyle);
-
-    // Mettre à jour les couleurs des textes
-    QString activeTextStyle = "font-size: 12px; color: #0d6efd; font-weight: bold;";
-    QString inactiveTextStyle = "font-size: 12px; color: #6c757d;";
-    QString completedTextStyle = "font-size: 12px; color: #198754; font-weight: bold;";
-
-    ui->labelStep1->setStyleSheet(currentStep > 1 ? completedTextStyle : (currentStep == 1 ? activeTextStyle : inactiveTextStyle));
-    ui->labelStep2->setStyleSheet(currentStep > 2 ? completedTextStyle : (currentStep == 2 ? activeTextStyle : inactiveTextStyle));
-    ui->labelStep3->setStyleSheet(currentStep == 3 ? activeTextStyle : inactiveTextStyle);
+    // Étape 1
+    ui->labelStep1->setStyleSheet(currentStep >= 1 ? activeStyle : inactiveStyle);
+    
+    // Étape 2 (Actif si step >= 2)
+    ui->labelStep2->setStyleSheet(currentStep >= 2 ? activeStyle : inactiveStyle);
+    
+    // Étape 3 (Actif si step >= 3)
+    ui->labelStep3->setStyleSheet(currentStep >= 3 ? activeStyle : inactiveStyle);
 }
 
-bool MainWindow::isAppInstalledWinget(const QString &wingetId) {
+bool MainWindow::isAppInstalledWinget(const QString &wingetId, const QString &appName) {
 #ifdef Q_OS_WIN
     if (wingetId.isEmpty()) return false;
 
@@ -566,7 +640,17 @@ bool MainWindow::isAppInstalledWinget(const QString &wingetId) {
     }
 
     // Chercher l'ID dans la sortie complète
-    bool isInstalled = output.contains(wingetId, Qt::CaseInsensitive);
+    // C'est beaucoup plus robuste que l'ancienne méthode
+    bool isInstalled = fullWingetOutput.contains(wingetId, Qt::CaseInsensitive);
+    
+    // Fallback : Vérifier par le nom de l'application si l'ID échoue
+    if (!isInstalled && !appName.isEmpty()) {
+        isInstalled = fullWingetOutput.contains(appName, Qt::CaseInsensitive);
+        if (isInstalled) {
+            appendLog(tr("🔍 %1 détecté via le nom (fallback)").arg(appName));
+        }
+    }
+    
     appendLog(tr("🔍 Résultat: %1 %2").arg(wingetId, isInstalled ? tr("TROUVÉ") : tr("NON TROUVÉ")));
 
     return isInstalled;
@@ -587,9 +671,12 @@ void MainWindow::updateButtons() {
 
     for (const AppStatus& app : apps) {
         if (app.item->checkState() == Qt::Checked) {
-            if (app.state == AppState::NotInstalled) {
+            // Pour VS, on permet "Installer" même si déjà présent (pour modifier les kits)
+            if (app.state == AppState::NotInstalled || app.hasCustomConfig) {
                 hasInstallableSelected = true;
-            } else if (app.state == AppState::Installed) {
+            }
+            
+            if (app.state == AppState::Installed) {
                 hasUninstallableSelected = true;
             }
         }
@@ -605,7 +692,8 @@ void MainWindow::onInstallClicked() {
 
     bool anySelected = false;
     for (AppStatus& app : apps) {
-        if (app.item->checkState() == Qt::Checked && app.state == AppState::NotInstalled) {
+        // Pour VS, on autorise l'install si coché et (pas installé OU a une config perso)
+        if (app.item->checkState() == Qt::Checked && (app.state == AppState::NotInstalled || app.hasCustomConfig)) {
             app.state = AppState::Installing;
             updateItemText(app);
             anySelected = true;
@@ -613,7 +701,7 @@ void MainWindow::onInstallClicked() {
     }
 
     if (!anySelected) {
-        appendLog(tr("Aucune application non installée sélectionnée pour l'installation."));
+        appendLog(tr("Aucune application sélectionnée pour l'installation."));
         return;
     }
 
@@ -654,17 +742,16 @@ void MainWindow::startNextInstall() {
     connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &MainWindow::handleProcessFinished);
 
 #ifdef Q_OS_WIN
-    if (app.installCommand.startsWith("powershell", Qt::CaseInsensitive)) {
-        // Extraire arguments de la commande Powershell
-        QStringList parts = QProcess::splitCommand(app.installCommand);
-        if (!parts.isEmpty()) {
-            QString exe = parts.takeFirst();
-            process->start(exe, parts);
-        } else {
-            appendLog(tr("❌ Erreur : commande PowerShell vide pour %1").arg(app.name));
-        }
+    // Utiliser splitCommand pour gérer correctement les guillemets et les arguments
+    QStringList parts = QProcess::splitCommand(app.installCommand);
+    if (!parts.isEmpty()) {
+        QString program = parts.takeFirst();
+        process->start(program, parts);
+        appendLog(tr("🔍 Commande de lancement : %1 %2").arg(program, parts.join(" ")));
     } else {
-        process->start("cmd", {"/C", app.installCommand});
+        appendLog(tr("❌ Erreur : commande d'installation vide pour %1").arg(app.name));
+        ++currentAppIndex;
+        startNextInstall();
     }
 #else
     process->start("bash", {"-c", app.installCommand});
@@ -708,60 +795,78 @@ void MainWindow::handleProcessFinished(int exitCode, QProcess::ExitStatus exitSt
 
     AppStatus &app = apps[currentAppIndex];
 
-    appendLog(tr("🔍 Debug - Code de sortie : %1, Statut : %2").arg(exitCode).arg(exitStatus == QProcess::NormalExit ? tr("Normal") : tr("Crash")));
+    appendLog(tr("🔍 Debug - Fin de processus pour %1. Code : %2, Statut : %3").arg(app.name).arg(exitCode).arg(exitStatus == QProcess::NormalExit ? tr("Normal") : tr("Crash")));
 
     if (uninstalling) {
-        app.state = (exitCode == 0) ? AppState::NotInstalled : AppState::Installed;
-        if (exitCode == 0) {
+        // Pour la désinstallation, on est un peu plus souple sur les codes de succès
+        bool isSuccess = (exitCode == 0 || exitCode == 3010 || exitCode == 1641);
+        app.state = isSuccess ? AppState::NotInstalled : AppState::Installed;
+        
+        if (isSuccess) {
             appendLog(tr("✅ %1 désinstallé avec succès").arg(app.name));
         } else {
             appendLog(tr("❌ Échec de la désinstallation de %1 (code: %2)").arg(app.name).arg(exitCode));
-            // Afficher les dernières erreurs si disponibles
-            if (process) {
-                QString finalError = process->readAllStandardError();
-                if (!finalError.isEmpty()) {
-                    appendLog(tr("❌ Erreur finale : %1").arg(finalError.trimmed()));
+        }
+        
+        updateItemText(app);
+        currentAppIndex++;
+        startNextUninstall();
+        
+    } else {
+        // Liste des codes de succès pour les installeurs Windows (incluant reboot requis)
+        // 0: Succès, 3010: Succès (Reboot requis), 1641: Succès (Reboot initié)
+        bool isSuccess = (exitCode == 0 || exitCode == 3010 || exitCode == 1641);
+        
+        if (isSuccess && app.name.contains("Visual Studio", Qt::CaseInsensitive)) {
+            // Pour Visual Studio, on vérifie si l'installateur tourne encore
+            appendLog(tr("🔍 Le processus principal est terminé. Vérification de l'installateur en arrière-plan..."));
+            // Attendre 5 secondes avant la première vérification pour laisser le temps au processus de démarrer
+            QTimer::singleShot(5000, this, &MainWindow::checkVSInstallerRunning);
+            return; // On ne passe pas tout de suite à la suite, checkVSInstallerRunning s'en chargera
+        }
+
+        app.state = isSuccess ? AppState::Installed : AppState::NotInstalled;
+        if (isSuccess) {
+            if (exitCode == 3010 || exitCode == 1641) {
+                appendLog(tr("✅ %1 installé avec succès (Redémarrage requis)").arg(app.name));
+            } else {
+                appendLog(tr("✅ %1 installé avec succès").arg(app.name));
+            }
+        } else {
+            appendLog(tr("❌ Échec de l'installation de %1 (code: %2)").arg(app.name).arg(exitCode));
+            if (exitCode == 1) {
+                appendLog(tr("💡 Note: Si l'application s'est lancée, cet échec peut être un faux positif (comportement fréquent avec certains installateurs type Velopack/Squirrel)."));
+            }
+        }
+        
+        updateItemText(app);
+        currentAppIndex++;
+        
+        // Mettre à jour la barre de progression
+        int totalSelected = 0;
+        int completed = 0;
+        for (int i = 0; i < apps.size(); ++i) {
+            if (apps[i].item->checkState() == Qt::Checked) {
+                totalSelected++;
+                if (i < currentAppIndex) {
+                    completed++;
                 }
             }
         }
-    } else {
-        app.state = (exitCode == 0) ? AppState::Installed : AppState::NotInstalled;
-        if (exitCode == 0) {
-            appendLog(tr("✅ %1 installé avec succès").arg(app.name));
-        } else {
-            appendLog(tr("❌ Échec de l'installation de %1 (code: %2)").arg(app.name).arg(exitCode));
+
+        if (totalSelected > 0) {
+            ui->progressBar->setValue((completed * 100) / totalSelected);
         }
-    }
 
-    updateItemText(app);
-
-    ++currentAppIndex;
-
-    // Calculate progress based on selected items
-    int totalSelected = 0;
-    int completed = 0;
-    for (int i = 0; i < apps.size(); ++i) {
-        if (apps[i].item->checkState() == Qt::Checked) {
-            totalSelected++;
-            if (i < currentAppIndex) {
-                completed++;
-            }
-        }
-    }
-
-    if (totalSelected > 0) {
-        ui->progressBar->setValue((completed * 100) / totalSelected);
-    }
-
-    if (uninstalling) {
-        startNextUninstall();
-    } else {
         startNextInstall();
     }
 }
 
 QString MainWindow::generateVSInstallCommand() {
-    QString baseCommand = "winget install --id Microsoft.VisualStudio.2022.Community --override \"";
+    // Ajout de --force pour permettre la modification via réinstallation
+    // Retrait de --disable-interactivity pour laisser l'interface de l'installer visible si besoin
+    // Utilisation de --passive au lieu de --quiet pour voir la progression graphiquement
+    QString baseCommand = "winget install --id Microsoft.VisualStudio.Community --force --accept-source-agreements --accept-package-agreements --override \"";
     QStringList workloads;
 
     if (ui->webDevCheckBox->isChecked())
@@ -788,14 +893,41 @@ QString MainWindow::generateVSInstallCommand() {
     if (ui->includeRecommendedCheckBox->isChecked())
         workloadsStr += " --includeRecommended";
 
-    workloadsStr += " --quiet";
+    workloadsStr += " --passive --norestart";
 
-    // Si aucun workload n'est sélectionné, installer juste l'IDE de base
+    // Si aucun workload n'est sélectionné, installer juste l'IDE de base avec les accords acceptés
     if (workloads.isEmpty()) {
-        return "winget install --id Microsoft.VisualStudio.2022.Community --override \"--quiet\"";
+        return "winget install --id Microsoft.VisualStudio.Community --force --accept-source-agreements --accept-package-agreements --override \"--passive --norestart\"";
     }
 
     return baseCommand + workloadsStr + "\"";
+}
+
+QStringList MainWindow::getInstalledWingetIds() {
+    QStringList ids;
+#ifdef Q_OS_WIN
+    appendLog(tr("🚀 Récupération des applications installées (winget list)..."));
+    QProcess proc;
+    // On augmente le timeout car winget peut être lent
+    proc.start("winget", {"list"});
+    if (!proc.waitForFinished(60000)) {
+        appendLog(tr("⚠️ Timeout winget list"));
+        return ids;
+    }
+
+    // On stocke TOUTE la sortie brute
+    // C'est beaucoup plus fiable que d'essayer de parser les colonnes
+    // car winget coupe les noms longs et mélange les colonnes parfois.
+    fullWingetOutput = proc.readAllStandardOutput();
+    
+    // On loggue juste le succès, pas tout le contenu
+    appendLog(tr("✅ Liste des applications récupérée avec succès (%1 octets)").arg(fullWingetOutput.size()));
+    
+    // On retourne une liste vide car on utilise maintenant fullWingetOutput
+    // Mais pour compatibilité avec le reste du code existant qui pourrait l'utiliser...
+    // En fait, on va modifier isAppInstalledWinget pour utiliser fullWingetOutput
+#endif
+    return ids;
 }
 
 void MainWindow::onUninstallClicked() {
@@ -844,35 +976,10 @@ void MainWindow::startNextUninstall() {
     AppStatus &app = apps[currentAppIndex];
 
 #ifdef Q_OS_WIN
-    if (!app.uninstallCommand.isEmpty() && app.uninstallCommand.contains("powershell", Qt::CaseInsensitive)) {
-        appendLog(tr("▶️ Désinstallation personnalisée : %1").arg(app.name));
-
-        if (process) {
-            process->deleteLater();
-        }
-        process = new QProcess(this);
-
-        connect(process, &QProcess::readyReadStandardOutput, this, &MainWindow::handleProcessOutput);
-        connect(process, &QProcess::readyReadStandardError, this, &MainWindow::handleProcessError);
-        connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &MainWindow::handleProcessFinished);
-
-        QStringList parts = QProcess::splitCommand(app.uninstallCommand);
-        if (!parts.isEmpty()) {
-            QString exe = parts.takeFirst();
-            process->start(exe, parts);
-        } else {
-            appendLog(tr("❌ Erreur : commande PowerShell vide pour la désinstallation de %1").arg(app.name));
-            ++currentAppIndex;
-            startNextUninstall();
-            return;
-        }
-
-    } else {
-        // Désinstallation winget classique
+    // Utilisation uniforme de splitCommand pour éviter les problèmes de guillemets
+    QString commandToExecute = app.uninstallCommand;
+    if (commandToExecute.isEmpty()) {
         QString wingetId = extractWingetId(app.installCommand);
-        appendLog(tr("🔍 Debug - Commande d'installation : %1").arg(app.installCommand));
-        appendLog(tr("🔍 Debug - ID winget extrait : %1").arg(wingetId));
-
         if (wingetId.isEmpty()) {
             appendLog(tr("❌ Erreur : impossible d'extraire l'ID winget pour %1").arg(app.name));
             app.state = AppState::Installed;
@@ -881,22 +988,25 @@ void MainWindow::startNextUninstall() {
             startNextUninstall();
             return;
         }
+        commandToExecute = QString("winget uninstall --id %1 --silent --accept-source-agreements").arg(wingetId);
+    }
 
-        appendLog(tr("▶️ Désinstallation : %1 (ID: %2)").arg(app.name, wingetId));
+    appendLog(tr("▶️ Désinstallation : %1").arg(app.name));
+    if (process) process->deleteLater();
+    process = new QProcess(this);
+    connect(process, &QProcess::readyReadStandardOutput, this, &MainWindow::handleProcessOutput);
+    connect(process, &QProcess::readyReadStandardError, this, &MainWindow::handleProcessError);
+    connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &MainWindow::handleProcessFinished);
 
-        if (process) {
-            process->deleteLater();
-        }
-        process = new QProcess(this);
-
-        connect(process, &QProcess::readyReadStandardOutput, this, &MainWindow::handleProcessOutput);
-        connect(process, &QProcess::readyReadStandardError, this, &MainWindow::handleProcessError);
-        connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &MainWindow::handleProcessFinished);
-
-        QStringList args = {"uninstall", wingetId, "--silent"};
-        appendLog(tr("🔍 Debug - Commande complète : winget %1").arg(args.join(" ")));
-
-        process->start("winget", args);
+    QStringList parts = QProcess::splitCommand(commandToExecute);
+    if (!parts.isEmpty()) {
+        QString program = parts.takeFirst();
+        process->start(program, parts);
+        appendLog(tr("🔍 Commande de lancement : %1 %2").arg(program, parts.join(" ")));
+    } else {
+        appendLog(tr("❌ Erreur : commande de désinstallation invalide pour %1").arg(app.name));
+        ++currentAppIndex;
+        startNextUninstall();
     }
 #else
     appendLog(tr("❌ Désinstallation non supportée sur cette plateforme pour %1").arg(app.name));
@@ -910,19 +1020,20 @@ void MainWindow::startNextUninstall() {
 void MainWindow::updateStatusLabel(QLabel *statusLabel, const AppStatus &app) {
     QString statusStr;
     QString colorStyle;
+    bool isDark = settings.value("darkTheme", false).toBool();
     switch (app.state) {
     case AppState::Installed:
         statusStr = tr("[installé]");
-        colorStyle = "color: green; font-weight: bold;";
+        colorStyle = QString("color: %1; font-weight: bold;").arg(isDark ? "#10b981" : "#059669");
         break;
     case AppState::Installing:
         statusStr = tr("[en cours...]");
-        colorStyle = "color: blue; font-weight: bold;";
+        colorStyle = QString("color: %1; font-weight: bold;").arg(isDark ? "#3b82f6" : "#2563eb");
         break;
     case AppState::NotInstalled:
     default:
         statusStr = tr("[non installé]");
-        colorStyle = "color: red; font-weight: bold;";
+        colorStyle = QString("color: %1; font-weight: bold;").arg(isDark ? "#ef4444" : "#dc2626");
         break;
     }
     statusLabel->setText(statusStr);
@@ -930,7 +1041,7 @@ void MainWindow::updateStatusLabel(QLabel *statusLabel, const AppStatus &app) {
 }
 
 void MainWindow::addConfigButtonToItem(AppStatus& app) {
-    if (!app.name.contains("Microsoft Visual Studio Community 2022", Qt::CaseInsensitive)) {
+    if (!app.name.contains("Microsoft Visual Studio Community 2026", Qt::CaseInsensitive)) {
         return;
     }
 
@@ -946,62 +1057,57 @@ void MainWindow::addConfigButtonToItem(AppStatus& app) {
         oldWidget->deleteLater();
     }
 
-    // Créer le widget cliquable personnalisé
+    // Créer le widget personnalisé
     ClickableItemWidget *itemWidget = new ClickableItemWidget(app.item, ui->listWidget);
-
+    itemWidget->setObjectName("vsItemWidget");
+    
     QHBoxLayout *layout = new QHBoxLayout(itemWidget);
-    layout->setContentsMargins(5, 0, 5, 0);
+    layout->setContentsMargins(10, 5, 10, 5);
     layout->setSpacing(10);
 
-    // Label pour le nom avec la même couleur que les autres apps selon l'état
-    QLabel *nameLabel = new QLabel("Microsoft Visual Studio Community 2022", itemWidget);
+    // Label pour le nom
+    QLabel *nameLabel = new QLabel("Microsoft Visual Studio Community 2026", itemWidget);
+    nameLabel->setObjectName("nameLabel");
     nameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-
-    // Appliquer les mêmes couleurs que les autres applications
-    QString textStyle;
-    switch (app.state) {
-    case AppState::Installed:
-        textStyle = "font-size: 12px; font-weight: normal; color: #28a745;"; // Vert
-        break;
-    case AppState::Installing:
-        textStyle = "font-size: 12px; font-weight: normal; color: #007bff;"; // Bleu
-        break;
-    case AppState::NotInstalled:
-    default:
-        textStyle = "font-size: 12px; font-weight: normal; color: #dc3545;"; // Rouge
-        break;
-    }
-    nameLabel->setStyleSheet(textStyle);
-    nameLabel->setObjectName("nameLabel"); // Pour pouvoir le retrouver plus tard
 
     // Label pour le statut
     QLabel *statusLabel = new QLabel(itemWidget);
     statusLabel->setObjectName("statusLabel");
     statusLabel->setMinimumWidth(100);
+    statusLabel->setAlignment(Qt::AlignCenter);
     updateStatusLabel(statusLabel, app);
 
     // Bouton de configuration
     ConfigButton *configButton = new ConfigButton(itemWidget);
+    style()->unpolish(configButton);
+    style()->polish(configButton);
 
-    // Connecter le signal de clic du widget pour mettre à jour les boutons
+    layout->addWidget(nameLabel);
+    layout->addStretch();
+    layout->addWidget(statusLabel);
+    layout->addWidget(configButton);
+
+    // Appliquer le style au nameLabel après création car updateItemText l'utilise
+    updateItemText(app);
+
+    // Style important pour éviter le look "boxy"
+    itemWidget->setStyleSheet("background: transparent; border: none;");
+    
+    ui->listWidget->setItemWidget(app.item, itemWidget);
+    app.item->setSizeHint(QSize(300, 50));
+
+    // Connecter le signal de clic pour basculer la sélection
     connect(itemWidget, &ClickableItemWidget::itemClicked, this, &MainWindow::updateButtons);
 
     // Connecter le bouton de configuration
     connect(configButton, &QPushButton::clicked, [this]() {
         for (int i = 0; i < apps.size(); ++i) {
-            if (apps[i].name.contains("Microsoft Visual Studio Community 2022", Qt::CaseInsensitive)) {
+            if (apps[i].name.contains("Microsoft Visual Studio Community 2026", Qt::CaseInsensitive)) {
                 showVSConfigDialog(i);
                 return;
             }
         }
     });
-
-    layout->addWidget(nameLabel);
-    layout->addWidget(statusLabel);
-    layout->addWidget(configButton);
-
-    ui->listWidget->setItemWidget(app.item, itemWidget);
-    app.item->setSizeHint(QSize(300, 40));
 }
 
 void MainWindow::showVSConfigDialog(int appIndex) {
@@ -1079,6 +1185,7 @@ void MainWindow::onVSConfigCancelClicked() {
 }
 
 void MainWindow::updateItemText(AppStatus &app) {
+    bool isDark = settings.value("darkTheme", false).toBool();
     if (app.hasCustomConfig) {
         // Pour Visual Studio avec configuration personnalisée
         QWidget *itemWidget = ui->listWidget->itemWidget(app.item);
@@ -1095,14 +1202,14 @@ void MainWindow::updateItemText(AppStatus &app) {
                 QString textStyle;
                 switch (app.state) {
                 case AppState::Installed:
-                    textStyle = "font-size: 14px; font-weight: normal; color: #28a745;"; // Vert
+                    textStyle = QString("font-size: 13px; font-weight: 500; color: %1;").arg(isDark ? "#10b981" : "#059669"); 
                     break;
                 case AppState::Installing:
-                    textStyle = "font-size: 14px; font-weight: normal; color: #007bff;"; // Bleu
+                    textStyle = QString("font-size: 13px; font-weight: 500; color: %1;").arg(isDark ? "#3b82f6" : "#2563eb"); 
                     break;
                 case AppState::NotInstalled:
                 default:
-                    textStyle = "font-size: 14px; font-weight: normal; color: #dc3545;"; // Rouge
+                    textStyle = QString("font-size: 13px; font-weight: 500; color: %1;").arg(isDark ? "#ef4444" : "#dc2626"); 
                     break;
                 }
                 nameLabel->setStyleSheet(textStyle);
@@ -1115,21 +1222,71 @@ void MainWindow::updateItemText(AppStatus &app) {
         switch (app.state) {
         case AppState::Installed:
             statusStr = tr("[installé]");
-            color = Qt::darkGreen;
+            color = isDark ? QColor("#10b981") : Qt::darkGreen;
             break;
         case AppState::Installing:
             statusStr = tr("[en cours...]");
-            color = Qt::blue;
+            color = isDark ? QColor("#3b82f6") : Qt::blue;
             break;
         case AppState::NotInstalled:
         default:
             statusStr = tr("[non installé]");
-            color = Qt::red;
+            // Rouge pour non installé
+            color = isDark ? QColor("#ef4444") : Qt::red;
             break;
         }
+        
+        // on laisse comme avant mais on change juste la couleur globale de l'item
         app.item->setText(app.name + " " + statusStr);
         app.item->setForeground(QBrush(color));
     }
+}
+
+void MainWindow::checkVSInstallerRunning() {
+    QProcess *checkProcess = new QProcess(this);
+    connect(checkProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this, checkProcess](int exitCode, QProcess::ExitStatus exitStatus) {
+        QString output = checkProcess->readAllStandardOutput();
+        QString error = checkProcess->readAllStandardError();
+        checkProcess->deleteLater();
+
+        // Debug : afficher la sortie brute pour comprendre pourquoi ça rate
+        if (!output.isEmpty()) {
+            // On ne loggue pas tout pour ne pas spammer, mais on cherche
+            // appendLog("Debug tasklist: " + output.left(100) + "..."); 
+        }
+
+        bool isRunning = output.contains("vs_installer.exe", Qt::CaseInsensitive) || 
+                         output.contains("vs_setup_bootstrapper.exe", Qt::CaseInsensitive) ||
+                         output.contains("setup.exe", Qt::CaseInsensitive); // Parfois setup.exe reste actif
+
+        if (isRunning) {
+            appendLog(tr("⏳ L'installateur Visual Studio est toujours actif... (Vérification dans 5s)"));
+            // Vérifier à nouveau dans 5 secondes
+            QTimer::singleShot(5000, this, &MainWindow::checkVSInstallerRunning);
+        } else {
+            appendLog(tr("✅ Aucun processus d'installation détecté via tasklist."));
+            appendLog(tr("✅ Installation de Visual Studio confirmée terminée."));
+            
+            // Marquer comme installé et passer au suivant
+            if (currentAppIndex < apps.size()) {
+                AppStatus &app = apps[currentAppIndex];
+                if (app.name.contains("Visual Studio", Qt::CaseInsensitive)) {
+                    app.state = AppState::Installed;
+                    updateItemText(app);
+                    
+                    // Continuer l'installation des autres apps
+                    currentAppIndex++;
+                    startNextInstall();
+                }
+            }
+        }
+    });
+    
+    // Utiliser CSV pour être sûr du format, mais vérifier si window title contient Visual Studio pourrait être mieux ?
+    // Restons sur IMAGENAME pour l'instant mais sans filtre strict pour voir plus large si besoin
+    // checkProcess->start("tasklist", QStringList() << "/FO" << "CSV" << "/NH");
+    // Filtrons quand même pour éviter de parser 300 processus
+    checkProcess->start("tasklist", QStringList() << "/FI" << "IMAGENAME eq vs_*" << "/FO" << "CSV" << "/NH");
 }
 
 void MainWindow::updateSummary() {
@@ -1187,7 +1344,7 @@ void MainWindow::onRestartClicked() {
         if (app.hasCustomConfig) {
             // Pour Visual Studio avec configuration personnalisée
             QString wingetId = extractWingetId(app.installCommand);
-            app.state = isAppInstalledWinget(wingetId) ? AppState::Installed : AppState::NotInstalled;
+            app.state = isAppInstalledWinget(wingetId, app.name) ? AppState::Installed : AppState::NotInstalled;
             updateItemText(app); // Cela mettra à jour le label de statut dans le widget personnalisé
         } else {
             // Pour les applications normales
@@ -1198,7 +1355,7 @@ void MainWindow::onRestartClicked() {
             } else {
                 // Applications winget normales
                 QString wingetId = extractWingetId(app.installCommand);
-                app.state = isAppInstalledWinget(wingetId) ? AppState::Installed : AppState::NotInstalled;
+                app.state = isAppInstalledWinget(wingetId, app.name) ? AppState::Installed : AppState::NotInstalled;
             }
             updateItemText(app);
         }

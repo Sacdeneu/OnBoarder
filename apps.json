@@ -19,10 +19,10 @@
       }
     },
     {
-      "name": "Microsoft Visual Studio Community 2022",
+      "name": "Microsoft Visual Studio Community 2026",
       "icon": "visualstudio.svg",
       "commands": {
-        "windows": "winget install --id Microsoft.VisualStudio.2022.Community --override \"--quiet\""
+        "windows": "winget install --id Microsoft.VisualStudio.Community --override \"--quiet\""
       }
     },
     {

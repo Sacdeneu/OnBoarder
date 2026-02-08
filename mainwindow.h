@@ -20,7 +20,7 @@ class ClickableItemWidget : public QWidget {
 public:
     ClickableItemWidget(QListWidgetItem* item, QWidget* parent = nullptr)
         : QWidget(parent), listItem(item) {
-        setFixedHeight(40);
+        setFixedHeight(50);
     }
 
 signals:
@@ -121,6 +121,7 @@ private slots:
     void onCheckUpdateClicked();
     void onUpdateButtonClicked();
     void onBackToMainClicked();
+    void checkVSInstallerRunning();
     void onVSConfigOkClicked();
     void onVSConfigCancelClicked();
     void checkForUpdates(bool manual = false);
@@ -157,15 +158,18 @@ private:
     void loadApps();
     void startNextInstall();
     void startNextUninstall();
-    bool isAppInstalledWinget(const QString& wingetId);
+    QString extractWingetId(const QString& installCommand);
+    QStringList getInstalledWingetIds();
+    bool isAppInstalledWinget(const QString &wingetId, const QString &appName = "");
     void updateItemText(AppStatus& app);
     void appendLog(const QString& text);
     void updateButtons();
     void updateSummary();
-    QString extractWingetId(const QString& installCommand);
 
     Ui::MainWindow *ui;
     QVector<AppStatus> apps;
+    QString fullWingetOutput;
+    QStringList installedWingetIds;
     QProcess *process;
     int currentAppIndex;
     bool uninstalling;
