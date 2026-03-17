@@ -1,29 +1,33 @@
-name: Build and Release Windows
+name: Build and Release
+
 on:
   push:
     tags:
       - 'v*'
 
 jobs:
-  build:
+  # ──────────────────────────────────────────────────────────────
+  # Windows build (primary – creates the GitHub Release)
+  # ──────────────────────────────────────────────────────────────
+  build-windows:
     runs-on: windows-latest
     permissions:
       contents: write
-    
+
     steps:
     - name: Checkout source code
       uses: actions/checkout@v4
-      
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
-        
+
     - name: Setup MSVC environment
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x64
-        
+
     - name: Install Qt 6.8.1
       uses: jurplel/install-qt-action@v4
       with:
@@ -32,36 +36,32 @@ jobs:
         target: 'desktop'
         arch: 'win64_msvc2022_64'
         tools: 'tools_cmake tools_ninja'
-      
+
     - name: Configure project with qmake
       run: qmake OnBoarder.pro CONFIG+=release
-      
+
     - name: Build project
       run: nmake
-      
+
     - name: Deploy Qt dependencies
       run: |
         mkdir deploy
         copy release\OnBoarder.exe deploy\
         windeployqt deploy\OnBoarder.exe --release --no-translations --no-system-d3d-compiler --no-opengl-sw
-        
+
     - name: Create ZIP package
-      run: powershell Compress-Archive -Path "deploy\*" -DestinationPath "OnBoarder.zip"
-      
-    - name: Verify package exists
-      run: dir OnBoarder.zip
-      
+      run: powershell Compress-Archive -Path "deploy\*" -DestinationPath "OnBoarder-windows.zip"
+
     - name: Install Velopack CLI
       run: |
         $env:MSBuildSDKsPath=""
         dotnet tool install vpk --version 0.0.1298 --global
       shell: powershell
-    
+
     - name: Create Velopack release
       run: |
         $version = "${{ github.ref_name }}" -replace '^v', ''
         Write-Output "Using version: $version"
-        
         vpk pack `
           --packDir deploy `
           --packId OnBoarder `
@@ -69,7 +69,7 @@ jobs:
           --mainExe OnBoarder.exe `
           --outputDir Releases
       shell: powershell
-    
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       env:
@@ -78,17 +78,185 @@ jobs:
         tag_name: ${{ github.ref_name }}
         name: OnBoarder ${{ github.ref_name }}
         body: |
-          🚀 **OnBoarder ${{ github.ref_name }}** - Application Manager for Windows
-          
-          ## 📦 Download
-          Download `OnBoarder.zip` below
-          
+          🚀 **OnBoarder ${{ github.ref_name }}**
+
+          ## 📦 Downloads
+          | Platform | File |
+          |----------|------|
+          | Windows  | `OnBoarder-windows.zip` |
+          | macOS    | `OnBoarder-macos.zip` *(uploaded by macOS job)* |
+          | Linux    | `OnBoarder-linux.AppImage` *(uploaded by Linux job)* |
+
           ## 💻 System Requirements
-          - Windows 10/11 (64-bit)
-          - All Qt dependencies included in the ZIP
+          - **Windows**: 10/11 (64-bit) — all Qt dependencies bundled
+          - **macOS**: 12+ (Intel & Apple Silicon)
+          - **Linux**: Any modern distro with FUSE support (for AppImage)
         files: |
-          OnBoarder.zip
+          OnBoarder-windows.zip
           Releases/*
         draft: false
         prerelease: false
         generate_release_notes: false
+
+  # ──────────────────────────────────────────────────────────────
+  # macOS build
+  # ──────────────────────────────────────────────────────────────
+  build-macos:
+    runs-on: macos-latest
+    needs: build-windows   # ensure release is created first
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Install Qt 6.8.1
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.8.1'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+        tools: 'tools_cmake tools_ninja'
+
+    - name: Configure project with qmake
+      run: qmake OnBoarder.pro CONFIG+=release
+
+    - name: Build project
+      run: make -j$(sysctl -n hw.ncpu)
+
+    - name: Deploy Qt dependencies
+      run: |
+        mkdir -p deploy
+        # qmake on macOS produces OnBoarder.app in the build dir
+        cp -R OnBoarder.app deploy/ 2>/dev/null || cp -R release/OnBoarder.app deploy/ 2>/dev/null || true
+        macdeployqt deploy/OnBoarder.app
+
+    - name: Create ZIP package
+      run: zip -r OnBoarder-macos.zip deploy/
+
+    - name: Install Velopack CLI
+      run: dotnet tool install vpk --version 0.0.1298 --global
+
+    - name: Create Velopack release
+      run: |
+        version="${{ github.ref_name }}"
+        version="${version#v}"
+        vpk pack \
+          --packDir deploy \
+          --packId OnBoarder \
+          --packVersion "$version" \
+          --mainExe OnBoarder.app \
+          --outputDir Releases
+
+    - name: Upload macOS artifacts
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        files: |
+          OnBoarder-macos.zip
+          Releases/*
+
+  # ──────────────────────────────────────────────────────────────
+  # Linux build
+  # ──────────────────────────────────────────────────────────────
+  build-linux:
+    runs-on: ubuntu-latest
+    needs: build-windows   # ensure release is created first
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          libgl1-mesa-dev \
+          libglib2.0-dev \
+          libfuse2
+
+    - name: Install Qt 6.8.1
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.8.1'
+        host: 'linux'
+        target: 'desktop'
+        arch: 'linux_gcc_64'
+        tools: 'tools_cmake tools_ninja'
+
+    - name: Configure project with qmake
+      run: qmake OnBoarder.pro CONFIG+=release
+
+    - name: Build project
+      run: make -j$(nproc)
+
+    - name: Deploy with linuxdeploy
+      run: |
+        mkdir -p deploy
+        cp OnBoarder deploy/ 2>/dev/null || cp release/OnBoarder deploy/ 2>/dev/null || true
+
+        # Download linuxdeploy + Qt plugin
+        wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+        chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+
+        # Create .desktop file required by linuxdeploy
+        mkdir -p AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
+        cat > AppDir/usr/share/applications/OnBoarder.desktop << 'EOF'
+        [Desktop Entry]
+        Name=OnBoarder
+        Exec=OnBoarder
+        Icon=OnBoarder
+        Type=Application
+        Categories=Utility;
+        EOF
+        cp deploy/OnBoarder AppDir/usr/bin/OnBoarder 2>/dev/null || true
+
+        ./linuxdeploy-x86_64.AppImage \
+          --appdir AppDir \
+          --executable deploy/OnBoarder \
+          --plugin qt \
+          --output appimage
+
+        mv OnBoarder*.AppImage OnBoarder-linux.AppImage
+
+    - name: Install Velopack CLI
+      run: dotnet tool install vpk --version 0.0.1298 --global
+
+    - name: Create Velopack release
+      run: |
+        version="${{ github.ref_name }}"
+        version="${version#v}"
+        vpk pack \
+          --packDir deploy \
+          --packId OnBoarder \
+          --packVersion "$version" \
+          --mainExe OnBoarder \
+          --outputDir Releases
+
+    - name: Upload Linux artifacts
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        files: |
+          OnBoarder-linux.AppImage
+          Releases/*

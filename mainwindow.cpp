@@ -3,7 +3,9 @@
 #include <QProgressDialog>
 #include <QFile>
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QTimer>
+#include <QLabel>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -34,23 +36,44 @@ MainWindow::MainWindow(QWidget *parent)
     settings("Sacdeneu", "OnBoarder"),
     networkManager(new QNetworkAccessManager(this)),
     autoUpdateEnabled(false),
+    spinnerTimer(new QTimer(this)),
+    spinnerFrame(0),
+    loadingSpinner(nullptr),
+    loadingPageIndex(-1),
     ui(new Ui::MainWindow),
     process(nullptr),
     currentAppIndex(0),
     uninstalling(false)
 {
     ui->setupUi(this);
-    QFile testFile(":/data/apps.json");
-    if (testFile.open(QIODevice::ReadOnly)) {
-        ui->logTextEdit->append("✅ Fichier JSON accessible");
-        ui->logTextEdit->append("Contenu (100 premiers caractères): " + QString(testFile.read(100)));
-        testFile.close();
-    } else {
-        ui->logTextEdit->append("❌ Fichier JSON INACCESSIBLE");
-    }
-    ui->logTextEdit->setVisible(true);
-    ui->showLogsCheckBox->setChecked(true);
+    ui->logTextEdit->setVisible(false);
+    ui->showLogsCheckBox->setChecked(false);
     loadSettings();
+
+    // Build loading page and add it to the stacked widget
+    QWidget* pageLoading = new QWidget();
+    QVBoxLayout* loadingLayout = new QVBoxLayout(pageLoading);
+    loadingLayout->setAlignment(Qt::AlignCenter);
+    loadingLayout->setSpacing(20);
+
+    loadingSpinner = new SpinnerWidget(pageLoading);
+    QLabel* loadingLabel = new QLabel(tr("Vérification des applications installées..."), pageLoading);
+    loadingLabel->setObjectName("loadingLabel");
+    loadingLabel->setAlignment(Qt::AlignCenter);
+    loadingLabel->setStyleSheet("font-size: 14px; color: #a1a1aa;");
+
+    loadingLayout->addWidget(loadingSpinner, 0, Qt::AlignHCenter);
+    loadingLayout->addWidget(loadingLabel,   0, Qt::AlignHCenter);
+
+    loadingPageIndex = ui->stackedWidget->addWidget(pageLoading);
+
+    // Spinner animation — 3 traveling dots
+    connect(spinnerTimer, &QTimer::timeout, this, [this]() {
+        spinnerFrame = (spinnerFrame + 1) % 4;
+        static const QString frames[] = { "●○○", "○●○", "○○●", "○●○" };
+        ui->spinnerLabel->setText(frames[spinnerFrame]);
+    });
+    spinnerTimer->setInterval(280);
     // Connect buttons
     connect(ui->installButton, &QPushButton::clicked, this, &MainWindow::onInstallClicked);
     connect(ui->uninstallButton, &QPushButton::clicked, this, &MainWindow::onUninstallClicked);
@@ -86,9 +109,8 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(tr("OnBoarder"));
     setWindowIcon(QIcon(":/icons/favicon.svg"));
 
-    loadApps();
-
     updateStepIndicator(1);
+    startLoadingApps();
 }
 
 void MainWindow::onUpdateButtonClicked() {
@@ -161,8 +183,10 @@ void MainWindow::applyDarkTheme(bool enabled) {
         qApp->setStyleSheet(
             "QMainWindow { background-color: #050505; }"
             "QWidget { background-color: #050505; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }"
-            "QWidget#sidebarWidget { background-color: #1e1e1e; }" /* Sidebar darker but distinct */
-            "QWidget#step1Widget, QWidget#step2Widget, QWidget#step3Widget { background-color: transparent; }"
+            "QWidget#sidebarWidget { background-color: #1e1e1e; }"
+            "QWidget#step1Widget, QWidget#step2Widget, QWidget#step3Widget,"
+            "QWidget#connector12Widget, QWidget#connector23Widget,"
+            "QWidget#appHeaderWidget { background-color: transparent; }"
             "QPushButton { "
             "  background-color: #121214; border: 1px solid #1c1c1f; border-radius: 6px; "
             "  padding: 8px 16px; color: #ffffff; font-weight: 500; "
@@ -209,14 +233,20 @@ void MainWindow::applyDarkTheme(bool enabled) {
             "QScrollArea { border: none; background-color: transparent; }"
             "QLabel#vsConfigTitle { color: #ffffff; font-size: 18px; font-weight: bold; }"
             "QLabel#workloadsLabel { color: #a1a1aa; }"
+            "QLabel#appTitleLabel { color: #ffffff; background: transparent; }"
+            "QFrame#sidebarTopSeparator { color: #2d2d30; background-color: #2d2d30; }"
+            "QWidget#appHeaderWidget { background-color: transparent; }"
+            "QLabel#loadingLabel { color: #a1a1aa; font-size: 14px; background: transparent; }"
         );
     } else {
         // Light Theme polished
         qApp->setStyleSheet(
             "QMainWindow { background-color: #ffffff; }"
             "QWidget { background-color: #ffffff; color: #18181b; font-family: 'Segoe UI', sans-serif; }"
-            "QWidget#sidebarWidget { background-color: #f3f3f3; }" /* Sidebar light grey */
-            "QWidget#step1Widget, QWidget#step2Widget, QWidget#step3Widget { background-color: transparent; }"
+            "QWidget#sidebarWidget { background-color: #f3f3f3; }"
+            "QWidget#step1Widget, QWidget#step2Widget, QWidget#step3Widget,"
+            "QWidget#connector12Widget, QWidget#connector23Widget,"
+            "QWidget#appHeaderWidget { background-color: transparent; }"
             "QPushButton { "
             "  background-color: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 6px; "
             "  padding: 8px 16px; color: #18181b; font-weight: 500; "
@@ -248,6 +278,10 @@ void MainWindow::applyDarkTheme(bool enabled) {
             "  text-align: center; color: transparent; height: 6px; "
             "}"
             "QProgressBar::chunk { background-color: #2563eb; border-radius: 5px; }"
+            "QLabel#appTitleLabel { color: #18181b; background: transparent; }"
+            "QFrame#sidebarTopSeparator { color: #e4e4e7; background-color: #e4e4e7; }"
+            "QWidget#appHeaderWidget { background-color: transparent; }"
+            "QLabel#loadingLabel { color: #6b7280; font-size: 14px; background: transparent; }"
         );
     }
 }
@@ -274,7 +308,10 @@ void MainWindow::onSettingsClicked() {
 void MainWindow::onDarkThemeToggled(bool checked) {
     applyDarkTheme(checked);
     saveSettings();
-    
+
+    // Refresh step indicator colors for new theme
+    updateStepIndicator(ui->stackedWidget->currentIndex() + 1);
+
     // Rafraîchir les couleurs de tous les items
     for (AppStatus &app : apps) {
         updateItemText(app);
@@ -477,9 +514,41 @@ void MainWindow::onUpdateDownloadFinished() {
                                      .arg(setupFilePath));
     }
 }
-void MainWindow::loadApps() {
-    installedWingetIds = getInstalledWingetIds();
+void MainWindow::startLoadingApps() {
+    // Show loading page with spinner while winget list runs asynchronously
+    hideStepIndicator(true);
+    ui->stackedWidget->setCurrentIndex(loadingPageIndex);
+    loadingSpinner->start();
 
+#ifdef Q_OS_WIN
+    QProcess* wingetProc = new QProcess(this);
+    connect(wingetProc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, [this, wingetProc](int, QProcess::ExitStatus) {
+        fullWingetOutput = wingetProc->readAllStandardOutput();
+        wingetProc->deleteLater();
+        finishLoadingApps();
+    });
+    connect(wingetProc, &QProcess::errorOccurred,
+            this, [this, wingetProc](QProcess::ProcessError) {
+        wingetProc->deleteLater();
+        finishLoadingApps();
+    });
+    wingetProc->start("winget", {"list"});
+#else
+    finishLoadingApps();
+#endif
+}
+
+void MainWindow::finishLoadingApps() {
+    loadingSpinner->stop();
+    loadApps();
+    hideStepIndicator(false);
+    updateStepIndicator(1);
+    ui->stackedWidget->setCurrentIndex(0);
+}
+
+void MainWindow::loadApps() {
+    // fullWingetOutput already populated by startLoadingApps() asynchronously
     QFile file(":/data/apps.json");
     if (!file.open(QIODevice::ReadOnly)) {
         appendLog(tr("Erreur : impossible d'ouvrir apps.json"));
@@ -501,62 +570,106 @@ void MainWindow::loadApps() {
 
     apps.clear();
     ui->listWidget->clear();
+    categoryHeaderSet.clear();
+    categoryItemsMap.clear();
+    categoryExpandedMap.clear();
 
+    // Group apps by category, preserving JSON order
+    QStringList categoryOrder;
+    QMap<QString, QList<QJsonObject>> appsByCategory;
     for (const QJsonValue& val : appList) {
         QJsonObject obj = val.toObject();
-        AppStatus app;
-        app.name = obj.value("name").toString();
-        app.icon = obj.value("icon").toString();
-
-        QJsonObject cmds = obj.value("commands").toObject();
-        app.installCommand = cmds.value(OS_KEY).toString();
-
-        // Create item in listWidget FIRST
-        QListWidgetItem *item = new QListWidgetItem(QIcon(":/icons/" + app.icon), "");
-        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-        item->setCheckState(Qt::Unchecked);
-        item->setSizeHint(QSize(400, 45)); // Taille par défaut
-        app.item = item;
-
-        // Vérifier si c'est une installation personnalisée
-        if (obj.contains("install_method") && obj.value("install_method").toString() == "custom") {
-            app.uninstallCommand = obj.value("uninstall_command").toString();
-            QString executablePath = obj.value("executable_path").toString();
-            app.state = isCustomAppInstalled(app.name, executablePath) ? AppState::Installed : AppState::NotInstalled;
-        } else {
-            QString wingetId = extractWingetId(app.installCommand);
-            if (!wingetId.isEmpty()) {
-                app.uninstallCommand = QString("winget uninstall %1 --silent").arg(wingetId);
-            } else {
-                app.uninstallCommand = "";
-            }
-            app.state = isAppInstalledWinget(wingetId, app.name) ? AppState::Installed : AppState::NotInstalled;
+        QString cat = obj.value("category").toString(tr("Autres"));
+        if (!appsByCategory.contains(cat)) {
+            categoryOrder.append(cat);
+            appsByCategory[cat] = {};
         }
-
-        // Ajouter l'item à la liste AVANT de le configurer
-        ui->listWidget->addItem(item);
-
-        // Vérification spécifique pour Visual Studio
-        if (app.name.contains("Microsoft Visual Studio Community 2026", Qt::CaseInsensitive)) {
-            // Charger la configuration sauvegardée
-            QString savedConfig = settings.value("vsConfig", "").toString();
-            if (!savedConfig.isEmpty()) {
-                app.installCommand = savedConfig;
-                app.customConfigData = savedConfig;
-            }
-            addConfigButtonToItem(app);
-        } else {
-            // Pour les autres applications, utiliser le texte normal
-            updateItemText(app);
-        }
-
-        apps.append(app);
+        appsByCategory[cat].append(obj);
     }
 
-    // Forcer une mise à jour de la liste
+    // Build UI grouped by category
+    for (const QString& category : categoryOrder) {
+        // Category header item
+        QListWidgetItem* headerItem = new QListWidgetItem();
+        headerItem->setFlags(Qt::ItemIsEnabled); // not checkable
+        headerItem->setSizeHint(QSize(400, 36));
+        ui->listWidget->addItem(headerItem);
+
+        categoryHeaderSet.insert(headerItem);
+        categoryExpandedMap[headerItem] = true;
+        categoryItemsMap[headerItem] = {};
+
+        CategoryHeader* headerWidget = new CategoryHeader(category, ui->listWidget);
+        connect(headerWidget, &CategoryHeader::toggled, this, [this, headerItem]() {
+            toggleCategory(headerItem);
+        });
+        ui->listWidget->setItemWidget(headerItem, headerWidget);
+
+        // App items for this category
+        for (const QJsonObject& obj : appsByCategory[category]) {
+            AppStatus app;
+            app.name = obj.value("name").toString();
+            app.icon = obj.value("icon").toString();
+
+            QJsonObject cmds = obj.value("commands").toObject();
+            app.installCommand = cmds.value(OS_KEY).toString();
+
+            QListWidgetItem *item = new QListWidgetItem(QIcon(":/icons/" + app.icon), "");
+            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+            item->setCheckState(Qt::Unchecked);
+            item->setSizeHint(QSize(400, 45));
+            app.item = item;
+
+            if (obj.contains("install_method") && obj.value("install_method").toString() == "custom") {
+                app.uninstallCommand = obj.value("uninstall_command").toString();
+                QString executablePath = obj.value("executable_path").toString();
+                app.state = isCustomAppInstalled(app.name, executablePath) ? AppState::Installed : AppState::NotInstalled;
+            } else {
+                QString wingetId = extractWingetId(app.installCommand);
+                if (!wingetId.isEmpty()) {
+                    app.uninstallCommand = QString("winget uninstall %1 --silent").arg(wingetId);
+                } else {
+                    app.uninstallCommand = "";
+                }
+                app.state = isAppInstalledWinget(wingetId, app.name) ? AppState::Installed : AppState::NotInstalled;
+            }
+
+            ui->listWidget->addItem(item);
+            categoryItemsMap[headerItem].append(item);
+
+            if (app.name.contains("Microsoft Visual Studio Community 2026", Qt::CaseInsensitive)) {
+                QString savedConfig = settings.value("vsConfig", "").toString();
+                if (!savedConfig.isEmpty()) {
+                    app.installCommand = savedConfig;
+                    app.customConfigData = savedConfig;
+                }
+                addConfigButtonToItem(app);
+            } else {
+                updateItemText(app);
+            }
+
+            apps.append(app);
+        }
+    }
+
     ui->listWidget->setUniformItemSizes(false);
     ui->listWidget->update();
     updateButtons();
+}
+
+void MainWindow::toggleCategory(QListWidgetItem* headerItem) {
+    bool expanded = categoryExpandedMap.value(headerItem, true);
+    expanded = !expanded;
+    categoryExpandedMap[headerItem] = expanded;
+
+    for (QListWidgetItem* item : categoryItemsMap[headerItem]) {
+        item->setHidden(!expanded);
+    }
+
+    CategoryHeader* headerWidget = qobject_cast<CategoryHeader*>(
+        ui->listWidget->itemWidget(headerItem));
+    if (headerWidget)
+        headerWidget->setExpanded(expanded);
 }
 
 void MainWindow::hideStepIndicator(bool hide) {
@@ -598,64 +711,66 @@ void MainWindow::updateStepIndicator(int currentStep) {
     }
 
     hideStepIndicator(false);
-    
-    // Logique simplifiée : Texte vert pour actif/terminé, Gris pour inactif
-    // Pas de cercles, juste du texte
-    
-    bool isDark = settings.value("darkTheme", false).toBool();
-    QString activeColor = "#10b981"; // Vert
-    QString inactiveColor = isDark ? "#a1a1aa" : "#6c757d"; // Gris adapté au thème
-    
-    QString activeStyle = QString("font-size: 13px; color: %1; font-weight: bold; background: transparent;").arg(activeColor);
-    QString inactiveStyle = QString("font-size: 13px; color: %1; background: transparent;").arg(inactiveColor);
 
-    // Étape 1
-    ui->labelStep1->setStyleSheet(currentStep >= 1 ? activeStyle : inactiveStyle);
-    
-    // Étape 2 (Actif si step >= 2)
-    ui->labelStep2->setStyleSheet(currentStep >= 2 ? activeStyle : inactiveStyle);
-    
-    // Étape 3 (Actif si step >= 3)
-    ui->labelStep3->setStyleSheet(currentStep >= 3 ? activeStyle : inactiveStyle);
+    bool isDark = settings.value("darkTheme", false).toBool();
+
+    // Helper: style a step's number circle and label
+    auto styleStep = [&](QLabel* numLabel, QLabel* textLabel, bool active, bool done) {
+        if (active) {
+            // Current step: filled green circle, bold white text
+            numLabel->setStyleSheet(
+                "background-color: #10b981; color: #ffffff; border-radius: 14px; "
+                "font-weight: bold; font-size: 12px;");
+            textLabel->setStyleSheet(
+                QString("font-size: 13px; font-weight: bold; color: %1; background: transparent;")
+                    .arg(isDark ? "#ffffff" : "#18181b"));
+        } else if (done) {
+            // Completed step: lighter green circle, normal text
+            numLabel->setStyleSheet(
+                "background-color: #059669; color: #ffffff; border-radius: 14px; "
+                "font-weight: bold; font-size: 12px;");
+            textLabel->setStyleSheet(
+                QString("font-size: 13px; color: %1; background: transparent;")
+                    .arg(isDark ? "#d1fae5" : "#059669"));
+        } else {
+            // Future step: outlined gray circle, muted text
+            numLabel->setStyleSheet(
+                QString("background-color: transparent; color: %1; border-radius: 14px; "
+                        "border: 2px solid %2; font-weight: bold; font-size: 12px;")
+                    .arg(isDark ? "#52525b" : "#9ca3af")
+                    .arg(isDark ? "#3f3f46" : "#d1d5db"));
+            textLabel->setStyleSheet(
+                QString("font-size: 13px; color: %1; background: transparent;")
+                    .arg(isDark ? "#52525b" : "#9ca3af"));
+        }
+    };
+
+    styleStep(ui->step1NumberLabel, ui->labelStep1, currentStep == 1, currentStep > 1);
+    styleStep(ui->step2NumberLabel, ui->labelStep2, currentStep == 2, currentStep > 2);
+    styleStep(ui->step3NumberLabel, ui->labelStep3, currentStep == 3, false);
+
+    // Connector lines: green if the step before is done, gray otherwise
+    QString doneConnector   = isDark ? "background-color: #059669; border-radius: 1px;" : "background-color: #059669; border-radius: 1px;";
+    QString pendingConnector = isDark ? "background-color: #3f3f46; border-radius: 1px;" : "background-color: #d1d5db; border-radius: 1px;";
+    ui->connector12Label->setStyleSheet(currentStep > 1 ? doneConnector : pendingConnector);
+    ui->connector23Label->setStyleSheet(currentStep > 2 ? doneConnector : pendingConnector);
 }
 
 bool MainWindow::isAppInstalledWinget(const QString &wingetId, const QString &appName) {
 #ifdef Q_OS_WIN
     if (wingetId.isEmpty()) return false;
 
-    QProcess proc;
-    // Plus simple : juste winget list sans filtres
-    proc.start("winget", {"list"});
-    if (!proc.waitForFinished(10000)) {
-        appendLog(tr("⚠️ Timeout lors de la vérification de %1").arg(wingetId));
-        return false;
-    }
-
-    QString output = proc.readAllStandardOutput();
-    QString error = proc.readAllStandardError();
-
-    appendLog(tr("🔍 Vérification de %1:").arg(wingetId));
-    if (!error.isEmpty()) {
-        appendLog(tr("⚠️ Erreur winget list: %1").arg(error.trimmed()));
-    }
-
-    // Chercher l'ID dans la sortie complète
-    // C'est beaucoup plus robuste que l'ancienne méthode
+    // fullWingetOutput is already populated by getInstalledWingetIds() — no need to re-run winget
     bool isInstalled = fullWingetOutput.contains(wingetId, Qt::CaseInsensitive);
-    
-    // Fallback : Vérifier par le nom de l'application si l'ID échoue
+
     if (!isInstalled && !appName.isEmpty()) {
         isInstalled = fullWingetOutput.contains(appName, Qt::CaseInsensitive);
-        if (isInstalled) {
-            appendLog(tr("🔍 %1 détecté via le nom (fallback)").arg(appName));
-        }
     }
-    
-    appendLog(tr("🔍 Résultat: %1 %2").arg(wingetId, isInstalled ? tr("TROUVÉ") : tr("NON TROUVÉ")));
 
     return isInstalled;
 #else
     Q_UNUSED(wingetId);
+    Q_UNUSED(appName);
     return false;
 #endif
 }
@@ -721,6 +836,9 @@ void MainWindow::startNextInstall() {
     }
 
     if (currentAppIndex >= apps.size()) {
+        spinnerTimer->stop();
+        ui->spinnerLabel->setText("✅");
+        ui->currentAppLabel->setText(tr("Toutes les installations sont terminées."));
         appendLog(tr("✅ Toutes les installations sont terminées."));
         ui->progressBar->setValue(100);
         updateSummary();
@@ -730,6 +848,8 @@ void MainWindow::startNextInstall() {
     }
 
     AppStatus &app = apps[currentAppIndex];
+    ui->currentAppLabel->setText(tr("Installation de %1...").arg(app.name));
+    spinnerTimer->start();
     appendLog(tr("▶️ Installation : %1").arg(app.name));
 
     if (process) {
@@ -965,6 +1085,9 @@ void MainWindow::startNextUninstall() {
     }
 
     if (currentAppIndex >= apps.size()) {
+        spinnerTimer->stop();
+        ui->spinnerLabel->setText("✅");
+        ui->currentAppLabel->setText(tr("Toutes les désinstallations sont terminées."));
         appendLog(tr("✅ Toutes les désinstallations sont terminées."));
         ui->progressBar->setValue(100);
         updateSummary();
@@ -974,6 +1097,8 @@ void MainWindow::startNextUninstall() {
     }
 
     AppStatus &app = apps[currentAppIndex];
+    ui->currentAppLabel->setText(tr("Désinstallation de %1...").arg(app.name));
+    spinnerTimer->start();
 
 #ifdef Q_OS_WIN
     // Utilisation uniforme de splitCommand pour éviter les problèmes de guillemets
@@ -1330,38 +1455,19 @@ void MainWindow::onShowLogsToggled(bool checked) {
 }
 
 void MainWindow::onRestartClicked() {
-    ui->stackedWidget->setCurrentIndex(0);
-    updateStepIndicator(1);
-    hideStepIndicator(false);
+    spinnerTimer->stop();
+    ui->spinnerLabel->setText("●○○");
+    ui->currentAppLabel->setText(tr("Préparation en cours..."));
     ui->progressBar->setValue(0);
     ui->logTextEdit->clear();
     ui->summaryTextEdit->clear();
 
-    // Reset states and check states
+    // Uncheck all items immediately, then refresh winget state with loading animation
     for (AppStatus& app : apps) {
         app.item->setCheckState(Qt::Unchecked);
-
-        if (app.hasCustomConfig) {
-            // Pour Visual Studio avec configuration personnalisée
-            QString wingetId = extractWingetId(app.installCommand);
-            app.state = isAppInstalledWinget(wingetId, app.name) ? AppState::Installed : AppState::NotInstalled;
-            updateItemText(app); // Cela mettra à jour le label de statut dans le widget personnalisé
-        } else {
-            // Pour les applications normales
-            if (app.name.contains("Wrike", Qt::CaseInsensitive)) {
-                // Application avec installation personnalisée
-                QString executablePath = ""; // Vous devrez extraire cela du JSON si nécessaire
-                app.state = isCustomAppInstalled(app.name, executablePath) ? AppState::Installed : AppState::NotInstalled;
-            } else {
-                // Applications winget normales
-                QString wingetId = extractWingetId(app.installCommand);
-                app.state = isAppInstalledWinget(wingetId, app.name) ? AppState::Installed : AppState::NotInstalled;
-            }
-            updateItemText(app);
-        }
     }
 
-    updateButtons();
+    startLoadingApps();
 }
 
 void MainWindow::onQuitClicked() {
