@@ -179,6 +179,8 @@ MainWindow::~MainWindow() {
 
 void MainWindow::applyDarkTheme(bool enabled) {
     if (enabled) {
+        ui->appTitleLabel->setStyleSheet("font-size: 17px; font-weight: bold; color: #ffffff; background: transparent;");
+        ui->sidebarTopSeparator->setStyleSheet("color: #2d2d30; background-color: #2d2d30;");
         // True Dark Premium Theme (#050505 background)
         qApp->setStyleSheet(
             "QMainWindow { background-color: #050505; }"
@@ -239,7 +241,9 @@ void MainWindow::applyDarkTheme(bool enabled) {
             "QLabel#loadingLabel { color: #a1a1aa; font-size: 14px; background: transparent; }"
         );
     } else {
-        // Light Theme polished
+        ui->appTitleLabel->setStyleSheet("font-size: 17px; font-weight: bold; color: #18181b; background: transparent;");
+        ui->sidebarTopSeparator->setStyleSheet("color: #e4e4e7; background-color: #e4e4e7;");
+        // Light Theme
         qApp->setStyleSheet(
             "QMainWindow { background-color: #ffffff; }"
             "QWidget { background-color: #ffffff; color: #18181b; font-family: 'Segoe UI', sans-serif; }"
@@ -252,7 +256,17 @@ void MainWindow::applyDarkTheme(bool enabled) {
             "  padding: 8px 16px; color: #18181b; font-weight: 500; "
             "}"
             "QPushButton:hover { background-color: #e4e4e7; border-color: #d4d4d8; }"
-            "QListWidget { background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 8px; }"
+            "QPushButton:pressed { background-color: #d4d4d8; }"
+            "QPushButton:disabled { background-color: #f4f4f5; color: #9ca3af; border-color: #e4e4e7; }"
+            "QListWidget { "
+            "  background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 8px; "
+            "  padding: 5px; outline: none; "
+            "}"
+            "QListWidget::item { "
+            "  padding: 10px; border-bottom: 1px solid #f4f4f5; border-radius: 4px; "
+            "}"
+            "QListWidget::item:selected { background-color: #f0f9ff; color: #2563eb; }"
+            "QListWidget::item:hover { background-color: #f9fafb; }"
             "QScrollBar:vertical { "
             "  border: none; background: #f4f4f5; width: 10px; margin: 0px; "
             "}"
@@ -278,6 +292,11 @@ void MainWindow::applyDarkTheme(bool enabled) {
             "  text-align: center; color: transparent; height: 6px; "
             "}"
             "QProgressBar::chunk { background-color: #2563eb; border-radius: 5px; }"
+            "QTextEdit { background-color: #f9fafb; border: 1px solid #e4e4e7; border-radius: 8px; color: #18181b; }"
+            "QCheckBox { spacing: 8px; }"
+            "QScrollArea { border: none; background-color: transparent; }"
+            "QLabel#vsConfigTitle { color: #18181b; font-size: 18px; font-weight: bold; }"
+            "QLabel#workloadsLabel { color: #6b7280; }"
             "QLabel#appTitleLabel { color: #18181b; background: transparent; }"
             "QFrame#sidebarTopSeparator { color: #e4e4e7; background-color: #e4e4e7; }"
             "QWidget#appHeaderWidget { background-color: transparent; }"
@@ -1347,17 +1366,16 @@ void MainWindow::updateItemText(AppStatus &app) {
         switch (app.state) {
         case AppState::Installed:
             statusStr = tr("[installé]");
-            color = isDark ? QColor("#10b981") : Qt::darkGreen;
+            color = isDark ? QColor("#10b981") : QColor("#059669");
             break;
         case AppState::Installing:
             statusStr = tr("[en cours...]");
-            color = isDark ? QColor("#3b82f6") : Qt::blue;
+            color = isDark ? QColor("#3b82f6") : QColor("#2563eb");
             break;
         case AppState::NotInstalled:
         default:
             statusStr = tr("[non installé]");
-            // Rouge pour non installé
-            color = isDark ? QColor("#ef4444") : Qt::red;
+            color = isDark ? QColor("#ef4444") : QColor("#dc2626");
             break;
         }
         
