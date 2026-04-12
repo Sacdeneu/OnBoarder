@@ -241,14 +241,7 @@ jobs:
 
         # Create AppDir structure
         mkdir -p AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps AppDir/usr/bin
-        cat > AppDir/usr/share/applications/OnBoarder.desktop << 'EOF'
-[Desktop Entry]
-Name=OnBoarder
-Exec=OnBoarder
-Icon=OnBoarder
-Type=Application
-Categories=Utility;
-EOF
+        printf '[Desktop Entry]\nName=OnBoarder\nExec=OnBoarder\nIcon=OnBoarder\nType=Application\nCategories=Utility;\n' > AppDir/usr/share/applications/OnBoarder.desktop
 
         # Convert SVG icon to PNG (required by linuxdeploy)
         rsvg-convert -w 256 -h 256 favicon.svg -o AppDir/usr/share/icons/hicolor/256x256/apps/OnBoarder.png
