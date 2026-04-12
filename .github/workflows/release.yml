@@ -40,7 +40,8 @@ jobs:
     - name: Configure project with qmake
       run: |
         $version = "${{ github.ref_name }}" -replace '^v', ''
-        qmake OnBoarder.pro CONFIG+=release "DEFINES+=APP_VERSION=\\\"$version\\\""
+        $define = "DEFINES+=APP_VERSION=\`"$version\`""
+        qmake OnBoarder.pro CONFIG+=release $define
       shell: powershell
 
     - name: Build project
