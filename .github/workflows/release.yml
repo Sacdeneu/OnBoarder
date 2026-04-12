@@ -166,7 +166,7 @@ jobs:
           --packDir deploy \
           --packId OnBoarder \
           --packVersion "$version" \
-          --mainExe OnBoarder.app/Contents/MacOS/OnBoarder \
+          --mainExe OnBoarder \
           --outputDir Releases
 
     - name: Upload macOS artifacts
