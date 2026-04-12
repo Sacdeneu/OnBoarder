@@ -155,20 +155,6 @@ jobs:
     - name: Create ZIP package
       run: zip -r OnBoarder-macos.zip deploy/
 
-    - name: Install Velopack CLI
-      run: dotnet tool install vpk --version 0.0.1298 --global
-
-    - name: Create Velopack release
-      run: |
-        version="${{ github.ref_name }}"
-        version="${version#v}"
-        vpk pack \
-          --packDir deploy \
-          --packId OnBoarder \
-          --packVersion "$version" \
-          --mainExe OnBoarder \
-          --outputDir Releases
-
     - name: Upload macOS artifacts
       uses: softprops/action-gh-release@v2
       env:
@@ -177,7 +163,6 @@ jobs:
         tag_name: ${{ github.ref_name }}
         files: |
           OnBoarder-macos.zip
-          Releases/*
 
   # ──────────────────────────────────────────────────────────────
   # Linux build
