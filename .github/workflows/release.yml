@@ -40,8 +40,8 @@ jobs:
     - name: Configure project with qmake
       run: |
         $version = "${{ github.ref_name }}" -replace '^v', ''
-        $define = "DEFINES+=APP_VERSION=\`"$version\`""
-        qmake OnBoarder.pro CONFIG+=release $define
+        Set-Content -Path version.h -Value "#pragma once`n#define APP_VERSION `"$version`""
+        qmake OnBoarder.pro CONFIG+=release
       shell: powershell
 
     - name: Build project
@@ -133,7 +133,8 @@ jobs:
       run: |
         version="${{ github.ref_name }}"
         version="${version#v}"
-        qmake OnBoarder.pro CONFIG+=release "DEFINES+=APP_VERSION=\\\"$version\\\""
+        printf '#pragma once\n#define APP_VERSION "%s"\n' "$version" > version.h
+        qmake OnBoarder.pro CONFIG+=release
 
     - name: Build project
       run: make -j$(sysctl -n hw.ncpu)
@@ -219,7 +220,8 @@ jobs:
       run: |
         version="${{ github.ref_name }}"
         version="${version#v}"
-        qmake OnBoarder.pro CONFIG+=release "DEFINES+=APP_VERSION=\\\"$version\\\""
+        printf '#pragma once\n#define APP_VERSION "%s"\n' "$version" > version.h
+        qmake OnBoarder.pro CONFIG+=release
 
     - name: Build project
       run: make -j$(nproc)

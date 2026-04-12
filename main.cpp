@@ -17,6 +17,9 @@ int main(int argc, char *argv[]) {
 
     app.setApplicationName("OnBoarder");
     app.setOrganizationName("Sacdeneu");
+#if __has_include("version.h")
+#include "version.h"
+#endif
 #ifndef APP_VERSION
 #define APP_VERSION "1.0.0"
 #endif
