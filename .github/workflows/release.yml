@@ -38,7 +38,10 @@ jobs:
         tools: 'tools_cmake tools_ninja'
 
     - name: Configure project with qmake
-      run: qmake OnBoarder.pro CONFIG+=release
+      run: |
+        $version = "${{ github.ref_name }}" -replace '^v', ''
+        qmake OnBoarder.pro CONFIG+=release "DEFINES+=APP_VERSION=\\\"$version\\\""
+      shell: powershell
 
     - name: Build project
       run: nmake
@@ -126,16 +129,25 @@ jobs:
         tools: 'tools_cmake tools_ninja'
 
     - name: Configure project with qmake
-      run: qmake OnBoarder.pro CONFIG+=release
+      run: |
+        version="${{ github.ref_name }}"
+        version="${version#v}"
+        qmake OnBoarder.pro CONFIG+=release "DEFINES+=APP_VERSION=\\\"$version\\\""
 
     - name: Build project
       run: make -j$(sysctl -n hw.ncpu)
 
     - name: Deploy Qt dependencies
       run: |
+        APP_PATH=$(find . -name "OnBoarder.app" -maxdepth 3 2>/dev/null | grep -v "\.git" | head -1)
+        if [ -z "$APP_PATH" ]; then
+          echo "ERROR: OnBoarder.app not found!"
+          find . -maxdepth 4 -name "*.app" 2>/dev/null
+          exit 1
+        fi
+        echo "Found: $APP_PATH"
         mkdir -p deploy
-        # qmake on macOS produces OnBoarder.app in the build dir
-        cp -R OnBoarder.app deploy/ 2>/dev/null || cp -R release/OnBoarder.app deploy/ 2>/dev/null || true
+        cp -R "$APP_PATH" deploy/
         macdeployqt deploy/OnBoarder.app
 
     - name: Create ZIP package
@@ -190,7 +202,8 @@ jobs:
           build-essential \
           libgl1-mesa-dev \
           libglib2.0-dev \
-          libfuse2
+          libfuse2 \
+          librsvg2-bin
 
     - name: Install Qt 6.8.1
       uses: jurplel/install-qt-action@v4
@@ -202,7 +215,10 @@ jobs:
         tools: 'tools_cmake tools_ninja'
 
     - name: Configure project with qmake
-      run: qmake OnBoarder.pro CONFIG+=release
+      run: |
+        version="${{ github.ref_name }}"
+        version="${version#v}"
+        qmake OnBoarder.pro CONFIG+=release "DEFINES+=APP_VERSION=\\\"$version\\\""
 
     - name: Build project
       run: make -j$(nproc)
@@ -210,24 +226,27 @@ jobs:
     - name: Deploy with linuxdeploy
       run: |
         mkdir -p deploy
-        cp OnBoarder deploy/ 2>/dev/null || cp release/OnBoarder deploy/ 2>/dev/null || true
+        BINARY=$(find . -maxdepth 2 -name "OnBoarder" -type f -not -path "*/\.*" | head -1)
+        if [ -z "$BINARY" ]; then
+          echo "ERROR: OnBoarder binary not found!"
+          exit 1
+        fi
+        echo "Found binary: $BINARY"
+        cp "$BINARY" deploy/OnBoarder
 
         # Download linuxdeploy + Qt plugin
         wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
         wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
         chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
 
-        # Create .desktop file required by linuxdeploy
-        mkdir -p AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
-        cat > AppDir/usr/share/applications/OnBoarder.desktop << 'EOF'
-        [Desktop Entry]
-        Name=OnBoarder
-        Exec=OnBoarder
-        Icon=OnBoarder
-        Type=Application
-        Categories=Utility;
-        EOF
-        cp deploy/OnBoarder AppDir/usr/bin/OnBoarder 2>/dev/null || true
+        # Create AppDir structure
+        mkdir -p AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps AppDir/usr/bin
+        printf '[Desktop Entry]\nName=OnBoarder\nExec=OnBoarder\nIcon=OnBoarder\nType=Application\nCategories=Utility;\n' > AppDir/usr/share/applications/OnBoarder.desktop
+
+        # Convert SVG icon to PNG (required by linuxdeploy)
+        rsvg-convert -w 256 -h 256 favicon.svg -o AppDir/usr/share/icons/hicolor/256x256/apps/OnBoarder.png
+
+        cp deploy/OnBoarder AppDir/usr/bin/OnBoarder
 
         ./linuxdeploy-x86_64.AppImage \
           --appdir AppDir \
