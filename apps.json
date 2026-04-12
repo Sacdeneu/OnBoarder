@@ -2,6 +2,7 @@
   "apps": [
     {
       "name": "Google Chrome",
+      "category": "Navigateurs",
       "icon": "chrome.svg",
       "commands": {
         "windows": "winget install Google.Chrome -e --accept-source-agreements --accept-package-agreements",
@@ -10,7 +11,18 @@
       }
     },
     {
+      "name": "Firefox",
+      "category": "Navigateurs",
+      "icon": "firefox.svg",
+      "commands": {
+        "windows": "winget install Mozilla.Firefox -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask firefox",
+        "linux": "flatpak install flathub org.mozilla.firefox -y"
+      }
+    },
+    {
       "name": "Visual Studio Code",
+      "category": "IDEs & Éditeurs",
       "icon": "vscode.svg",
       "commands": {
         "windows": "winget install Microsoft.VisualStudioCode -e --accept-source-agreements --accept-package-agreements",
@@ -20,6 +32,7 @@
     },
     {
       "name": "Microsoft Visual Studio Community 2026",
+      "category": "IDEs & Éditeurs",
       "icon": "visualstudio.svg",
       "commands": {
         "windows": "winget install --id Microsoft.VisualStudio.Community --override \"--quiet\""
@@ -27,6 +40,7 @@
     },
     {
       "name": "JetBrains Rider",
+      "category": "IDEs & Éditeurs",
       "icon": "rider.svg",
       "commands": {
         "windows": "winget install JetBrains.Rider -e --accept-source-agreements --accept-package-agreements",
@@ -35,24 +49,8 @@
       }
     },
     {
-      "name": "SourceTree",
-      "icon": "sourcetree.svg",
-      "commands": {
-        "windows": "winget install Atlassian.Sourcetree -e --accept-source-agreements --accept-package-agreements",
-        "macos": "brew install --cask sourcetree"
-      }
-    },
-    {
-      "name": "Postman",
-      "icon": "postman.svg",
-      "commands": {
-        "windows": "winget install Postman.Postman -e --accept-source-agreements --accept-package-agreements",
-        "macos": "brew install --cask postman",
-        "linux": "flatpak install flathub com.getpostman.Postman -y"
-      }
-    },
-    {
       "name": "Android Studio",
+      "category": "IDEs & Éditeurs",
       "icon": "androidstudio.svg",
       "commands": {
         "windows": "winget install Google.AndroidStudio -e --accept-source-agreements --accept-package-agreements",
@@ -61,7 +59,57 @@
       }
     },
     {
+      "name": "SourceTree",
+      "category": "Git & Versioning",
+      "icon": "sourcetree.svg",
+      "commands": {
+        "windows": "winget install Atlassian.Sourcetree -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask sourcetree"
+      }
+    },
+    {
+      "name": "Postman",
+      "category": "API & Tests",
+      "icon": "postman.svg",
+      "commands": {
+        "windows": "winget install Postman.Postman -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask postman",
+        "linux": "flatpak install flathub com.getpostman.Postman -y"
+      }
+    },
+    {
+      "name": "Scalar",
+      "category": "API & Tests",
+      "icon": "scalar.png",
+      "commands": {
+        "windows": "winget install Scalar.Scalar -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask scalar",
+        "linux": "flatpak install flathub com.scalar.Scalar -y"
+      }
+    },
+    {
+      "name": "PostgreSQL",
+      "category": "Bases de données",
+      "icon": "postgresql.svg",
+      "commands": {
+        "windows": "winget install PostgreSQL.PostgreSQL -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install postgresql",
+        "linux": "sudo apt-get install postgresql postgresql-contrib -y"
+      }
+    },
+    {
+      "name": "DBeaver",
+      "category": "Bases de données",
+      "icon": "dbeaver.svg",
+      "commands": {
+        "windows": "winget install dbeaver.dbeaver -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask dbeaver-community",
+        "linux": "flatpak install flathub io.dbeaver.DBeaverCommunity -y"
+      }
+    },
+    {
       "name": "GIMP",
+      "category": "Design & Créatif",
       "icon": "gimp.svg",
       "commands": {
         "windows": "winget install GIMP.GIMP -e --accept-source-agreements --accept-package-agreements",
@@ -71,6 +119,7 @@
     },
     {
       "name": "Blender",
+      "category": "Design & Créatif",
       "icon": "blender.svg",
       "commands": {
         "windows": "winget install BlenderFoundation.Blender -e --accept-source-agreements --accept-package-agreements",
@@ -79,57 +128,8 @@
       }
     },
     {
-      "name": "PostgreSQL",
-      "icon": "postgresql.svg",
-      "commands": {
-        "windows": "winget install PostgreSQL.PostgreSQL -e --accept-source-agreements --accept-package-agreements",
-        "macos": "brew install postgresql",
-        "linux": "sudo apt-get install postgresql postgresql-contrib -y"
-      }
-    },
-    {
-      "name": "Unity Hub",
-      "icon": "unity.svg",
-      "commands": {
-        "windows": "winget install Unity.UnityHub -e --accept-source-agreements --accept-package-agreements",
-        "macos": "brew install --cask unity-hub",
-        "linux": "flatpak install flathub com.unity.UnityHub -y"
-      }
-    },
-    {
-      "name": "DBeaver",
-      "icon": "dbeaver.svg",
-      "commands": {
-        "windows": "winget install dbeaver.dbeaver -e --accept-source-agreements --accept-package-agreements",
-        "macos": "brew install --cask dbeaver-community",
-        "linux": "flatpak install flathub io.dbeaver.DBeaverCommunity -y"
-      }
-    },
-    {
-      "name": "ShareX",
-      "icon": "sharex.svg",
-      "commands": {
-        "windows": "winget install ShareX.ShareX -e --accept-source-agreements --accept-package-agreements"
-      }
-    },
-    {
-      "name": "Slack",
-      "icon": "slack.svg",
-      "commands": {
-        "windows": "winget install SlackTechnologies.Slack -e --accept-source-agreements --accept-package-agreements",
-        "macos": "brew install --cask slack",
-        "linux": "flatpak install flathub com.slack.Slack -y"
-      }
-    },
-    {
-      "name": "Wrike",
-      "icon": "wrike.svg",
-      "commands": {
-        "windows": "powershell -Command \"$msiPath = [System.IO.Path]::Combine($env:TEMP, 'WrikeDesktopApp.msi'); Remove-Item -Force -ErrorAction SilentlyContinue $msiPath; Invoke-WebRequest -Uri 'https://dl.wrike.com/download/WrikeDesktopApp_64.v4.5.2.msi' -OutFile $msiPath; $logPath = [System.IO.Path]::Combine($env:TEMP, 'WrikeInstall.log'); Remove-Item -Force -ErrorAction SilentlyContinue $logPath; & msiexec.exe /i $msiPath /qn /norestart /L*v $logPath\""
-      }
-    },
-    {
       "name": "Figma",
+      "category": "Design & Créatif",
       "icon": "figma.svg",
       "commands": {
         "windows": "winget install Figma.Figma -e --accept-source-agreements --accept-package-agreements",
@@ -138,15 +138,18 @@
       }
     },
     {
-      "name": "Epic Games Launcher",
-      "icon": "epicgameslauncher.svg",
+      "name": "Slack",
+      "category": "Communication",
+      "icon": "slack.svg",
       "commands": {
-        "windows": "winget install EpicGames.EpicGamesLauncher -e --accept-source-agreements --accept-package-agreements",
-        "macos": "brew install --cask epic-games"
+        "windows": "winget install SlackTechnologies.Slack -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask slack",
+        "linux": "flatpak install flathub com.slack.Slack -y"
       }
     },
     {
       "name": "Microsoft Teams",
+      "category": "Communication",
       "icon": "teams.svg",
       "commands": {
         "windows": "winget install Microsoft.Teams -e --accept-source-agreements --accept-package-agreements",
@@ -155,16 +158,8 @@
       }
     },
     {
-      "name": "Steam",
-      "icon": "steam.svg",
-      "commands": {
-        "windows": "winget install Valve.Steam -e --accept-source-agreements --accept-package-agreements",
-        "macos": "brew install --cask steam",
-        "linux": "flatpak install flathub com.valvesoftware.Steam -y"
-      }
-    },
-    {
       "name": "Discord",
+      "category": "Communication",
       "icon": "discord.svg",
       "commands": {
         "windows": "winget install Discord.Discord -e --accept-source-agreements --accept-package-agreements",
@@ -173,12 +168,48 @@
       }
     },
     {
-      "name": "Firefox",
-      "icon": "firefox.svg",
+      "name": "Wrike",
+      "category": "Communication",
+      "icon": "wrike.svg",
       "commands": {
-        "windows": "winget install Mozilla.Firefox -e --accept-source-agreements --accept-package-agreements",
-        "macos": "brew install --cask firefox",
-        "linux": "flatpak install flathub org.mozilla.firefox -y"
+        "windows": "powershell -Command \"$msiPath = [System.IO.Path]::Combine($env:TEMP, 'WrikeDesktopApp.msi'); Remove-Item -Force -ErrorAction SilentlyContinue $msiPath; Invoke-WebRequest -Uri 'https://dl.wrike.com/download/WrikeDesktopApp_64.v4.5.2.msi' -OutFile $msiPath; $logPath = [System.IO.Path]::Combine($env:TEMP, 'WrikeInstall.log'); Remove-Item -Force -ErrorAction SilentlyContinue $logPath; & msiexec.exe /i $msiPath /qn /norestart /L*v $logPath\""
+      }
+    },
+    {
+      "name": "Steam",
+      "category": "Jeux & Loisirs",
+      "icon": "steam.svg",
+      "commands": {
+        "windows": "winget install Valve.Steam -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask steam",
+        "linux": "flatpak install flathub com.valvesoftware.Steam -y"
+      }
+    },
+    {
+      "name": "Epic Games Launcher",
+      "category": "Jeux & Loisirs",
+      "icon": "epicgameslauncher.svg",
+      "commands": {
+        "windows": "winget install EpicGames.EpicGamesLauncher -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask epic-games"
+      }
+    },
+    {
+      "name": "Unity Hub",
+      "category": "Jeux & Loisirs",
+      "icon": "unity.svg",
+      "commands": {
+        "windows": "winget install Unity.UnityHub -e --accept-source-agreements --accept-package-agreements",
+        "macos": "brew install --cask unity-hub",
+        "linux": "flatpak install flathub com.unity.UnityHub -y"
+      }
+    },
+    {
+      "name": "ShareX",
+      "category": "Utilitaires",
+      "icon": "sharex.svg",
+      "commands": {
+        "windows": "winget install ShareX.ShareX -e --accept-source-agreements --accept-package-agreements"
       }
     }
   ]

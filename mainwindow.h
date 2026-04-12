@@ -14,7 +14,94 @@
 #include <QMouseEvent>
 #include <QHBoxLayout>
 #include <QWidget>
+#include <QTimer>
+#include <QSet>
+#include <QMap>
+#include <QPainter>
+#include <QPen>
 
+// ─── Spinning circle loader ───────────────────────────────────────────────────
+class SpinnerWidget : public QWidget {
+    Q_OBJECT
+public:
+    SpinnerWidget(QWidget* parent = nullptr) : QWidget(parent), angle(0) {
+        setFixedSize(64, 64);
+        timer = new QTimer(this);
+        connect(timer, &QTimer::timeout, this, [this]() {
+            angle = (angle + 18) % 360;
+            update();
+        });
+    }
+    void start() { angle = 0; timer->start(30); }
+    void stop()  { timer->stop(); }
+
+protected:
+    void paintEvent(QPaintEvent*) override {
+        QPainter p(this);
+        p.setRenderHint(QPainter::Antialiasing);
+        QRect rect(6, 6, width() - 12, height() - 12);
+        // Background ring
+        p.setPen(QPen(QColor("#27272a"), 5, Qt::SolidLine, Qt::RoundCap));
+        p.setBrush(Qt::NoBrush);
+        p.drawEllipse(rect);
+        // Spinning arc
+        p.setPen(QPen(QColor("#10b981"), 5, Qt::SolidLine, Qt::RoundCap));
+        p.drawArc(rect, (90 - angle) * 16, 100 * 16);
+    }
+
+private:
+    QTimer* timer;
+    int angle;
+};
+
+// ─── Category header widget ───────────────────────────────────────────────────
+class CategoryHeader : public QWidget {
+    Q_OBJECT
+public:
+    CategoryHeader(const QString& name, QWidget* parent = nullptr)
+        : QWidget(parent) {
+        setFixedHeight(36);
+        setCursor(Qt::PointingHandCursor);
+
+        QHBoxLayout* layout = new QHBoxLayout(this);
+        layout->setContentsMargins(12, 4, 12, 4);
+        layout->setSpacing(8);
+
+        arrowLabel = new QLabel("▼", this);
+        arrowLabel->setFixedWidth(14);
+        arrowLabel->setStyleSheet("color: #6b7280; font-size: 10px;");
+
+        nameLabel = new QLabel(name.toUpper(), this);
+        nameLabel->setStyleSheet(
+            "font-weight: bold; font-size: 10px; letter-spacing: 1px; color: #6b7280;");
+
+        layout->addWidget(arrowLabel);
+        layout->addWidget(nameLabel);
+        layout->addStretch();
+
+        setStyleSheet("background: transparent; border: none;");
+    }
+
+    void setExpanded(bool expanded) {
+        arrowLabel->setText(expanded ? "▼" : "▶");
+    }
+
+signals:
+    void toggled();
+
+protected:
+    void mousePressEvent(QMouseEvent* event) override {
+        if (event->button() == Qt::LeftButton)
+            emit toggled();
+        QWidget::mousePressEvent(event);
+    }
+
+private:
+    QLabel* arrowLabel;
+    QLabel* nameLabel;
+};
+
+// ─── Clickable item widget (VS row) ──────────────────────────────────────────
 class ClickableItemWidget : public QWidget {
     Q_OBJECT
 public:
@@ -29,7 +116,6 @@ signals:
 protected:
     void mousePressEvent(QMouseEvent* event) override {
         if (event->button() == Qt::LeftButton) {
-            // Basculer l'état de la checkbox
             Qt::CheckState currentState = listItem->checkState();
             listItem->setCheckState(currentState == Qt::Checked ? Qt::Unchecked : Qt::Checked);
             emit itemClicked();
@@ -41,6 +127,7 @@ private:
     QListWidgetItem* listItem;
 };
 
+// ─── Config button (gear icon) ───────────────────────────────────────────────
 class ConfigButton : public QPushButton {
     Q_OBJECT
 public:
@@ -52,20 +139,16 @@ public:
         setStyleSheet("QPushButton { border: none; background: transparent; padding: 2px; }");
         setCursor(Qt::PointingHandCursor);
         setToolTip("Configurer les modules Visual Studio");
-
-        // Créer l'icône gris très discret par défaut
         createGrayIcon();
     }
 
 protected:
     void enterEvent(QEnterEvent* event) override {
-        // Gris plus visible au hover
         createDarkGrayIcon();
         QPushButton::enterEvent(event);
     }
 
     void leaveEvent(QEvent* event) override {
-        // Revenir au gris très discret
         createGrayIcon();
         QPushButton::leaveEvent(event);
     }
@@ -74,7 +157,7 @@ private:
     void createGrayIcon() {
         QPixmap originalPixmap = QIcon(":/icons/settings.svg").pixmap(16, 16);
         QPixmap grayPixmap(originalPixmap.size());
-        grayPixmap.fill(QColor("#888888")); // Gris très discret
+        grayPixmap.fill(QColor("#888888"));
         grayPixmap.setMask(originalPixmap.createMaskFromColor(Qt::transparent));
         setIcon(QIcon(grayPixmap));
     }
@@ -82,7 +165,7 @@ private:
     void createDarkGrayIcon() {
         QPixmap originalPixmap = QIcon(":/icons/settings.svg").pixmap(16, 16);
         QPixmap darkGrayPixmap(originalPixmap.size());
-        darkGrayPixmap.fill(QColor("#CCCCCC")); // Gris plus visible au hover
+        darkGrayPixmap.fill(QColor("#CCCCCC"));
         darkGrayPixmap.setMask(originalPixmap.createMaskFromColor(Qt::transparent));
         setIcon(QIcon(darkGrayPixmap));
     }
@@ -147,6 +230,10 @@ private:
     void updateStatusLabel(QLabel *statusLabel, const AppStatus &app);
     QString generateVSInstallCommand();
     void showVSConfigDialog(int appIndex);
+    void toggleCategory(QListWidgetItem* headerItem);
+    void startLoadingApps();
+    void finishLoadingApps();
+
     QNetworkReply *updateDownloadReply;
     QString pendingUpdateVersion;
     QSettings settings;
@@ -165,6 +252,19 @@ private:
     void appendLog(const QString& text);
     void updateButtons();
     void updateSummary();
+
+    // Category tracking
+    QMap<QListWidgetItem*, QList<QListWidgetItem*>> categoryItemsMap;
+    QSet<QListWidgetItem*> categoryHeaderSet;
+    QMap<QListWidgetItem*, bool> categoryExpandedMap;
+
+    // Install-page spinner animation
+    QTimer *spinnerTimer;
+    int spinnerFrame;
+
+    // Loading-page spinner
+    SpinnerWidget *loadingSpinner;
+    int loadingPageIndex;
 
     Ui::MainWindow *ui;
     QVector<AppStatus> apps;

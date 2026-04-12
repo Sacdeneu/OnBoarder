@@ -26,6 +26,7 @@
         <file>sourcetree.svg</file>
         <file>rider.svg</file>
         <file>settings.svg</file>
+        <file>scalar.png</file>
     </qresource>
     <qresource prefix="/translations">
         <file>app_manager_en.ts</file>
